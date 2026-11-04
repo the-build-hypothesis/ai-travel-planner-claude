@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Existing primary Worker (CLOUDFLARE_WORKER_NAME). Do not rename.
+  "name": "ai-travel-planner-claude",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // Preserve administrator-managed plain-text vars (LLM_PROVIDER, LLM_MODEL,
+  // EMAIL_FROM, APP_PUBLIC_URL) that are configured on the Worker, not here.
+  "keep_vars": true,
+  "build": {
+    "command": "npm run build:client"
+  },
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bh-travel-v1-claude-claude-db",
+      "database_id": "f0ebeb80-b6b6-4360-bc95-87674614a4f4",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "send_email": [{ "name": "EMAIL" }],
+  "observability": { "enabled": true },
+  "workers_dev": false,
+  "preview_urls": false
+}
