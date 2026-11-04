@@ -13,6 +13,17 @@ describe("smoke", () => {
     expect(r.json.email.binding).toBe(true);
   });
 
+  it("redirects plain HTTP to HTTPS and sets HSTS on HTTPS responses", async () => {
+    const { env: e } = makeEnv();
+    const { createExecutionContext } = await import("cloudflare:test");
+    const worker = (await import("../src/worker/index")).default;
+    const r = await worker.fetch(new Request("http://travel.example.com/trips?x=1"), e, createExecutionContext());
+    expect(r.status).toBe(301);
+    expect(r.headers.get("location")).toBe("https://travel.example.com/trips?x=1");
+    const h = await new Client(e).get("/api/health");
+    expect(h.headers.get("strict-transport-security")).toContain("max-age=");
+  });
+
   it("unknown API routes return JSON 404", async () => {
     const { env } = makeEnv();
     const r = await new Client(env).get("/api/nope");

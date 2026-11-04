@@ -151,7 +151,19 @@ async function logAppError(env: Env, method: string, path: string, status: numbe
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    const url = new URL(request.url);
+    // Enforce HTTPS on public hosts (session cookies are Secure-only). Local dev stays on http.
+    if (url.protocol === "http:" && url.hostname !== "localhost" && url.hostname !== "127.0.0.1") {
+      url.protocol = "https:";
+      return Response.redirect(url.toString(), 301);
+    }
     if (Math.random() < 0.01) ctx.waitUntil(cleanupRateLimits(env.DB).catch(() => {}));
-    return app.fetch(request, env, ctx);
+    const res = await app.fetch(request, env, ctx);
+    if (url.protocol === "https:" && !res.headers.has("Strict-Transport-Security")) {
+      const out = new Response(res.body, res);
+      out.headers.set("Strict-Transport-Security", "max-age=31536000");
+      return out;
+    }
+    return res;
   },
 } satisfies ExportedHandler<Env>;
