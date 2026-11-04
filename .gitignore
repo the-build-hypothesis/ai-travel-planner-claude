@@ -1,0 +1,23 @@
+# secrets / local config
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+cloudflare.env
+.cloudflare.env
+.env
+.env.*
+
+# build / deps
+node_modules/
+dist/
+.wrangler/
+coverage/
+test-results/
+playwright-report/
+e2e/screenshots/
+*.log
+.DS_Store
+src/worker/build-info.ts
+
+# local-only operator credentials
+.admin-credentials

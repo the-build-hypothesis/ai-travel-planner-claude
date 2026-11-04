@@ -1,0 +1,5 @@
+OPENAI_API_KEY=""
+GOOGLE_MAPS_API_KEY=""
+LLM_PROVIDER="openai"
+LLM_MODEL="gpt-4o-mini"
+EMAIL_FROM="noreply@thebuildhypothesis.com"
