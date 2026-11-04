@@ -11,7 +11,7 @@ All times are UTC. Machine-readable results are in `BUILD_RESULTS.json`; the run
 - **Traveler experience:** works in production against the real OpenAI (`gpt-4o-mini`) and Google Places APIs. The spec §1.4 journey was run end-to-end in production (the Tokyo family request plus all five example follow-ups). It produced a 5-day plan in about 20 s with costs in the budget currency (USD) and 18/18 stops verified by Places. Each follow-up changed only the relevant day; all other days stayed byte-identical.
 - **Accounts and guests:** guest, registered-user and guest-to-account migration flows were verified in production.
 - **Admin console:** a separate console with a forced bootstrap password change, verified in production. It includes admin management, user and trip inspection, date-filtered cost and usage reporting, monitoring, pricing configuration and an append-only audit log.
-- **Tests:** 98 automated tests pass (5 files). Typecheck and build are clean.
+- **Tests:** 99 automated tests pass (5 files). Typecheck and build are clean.
 - **Deployment:** every deployment ran through the GitHub-connected Workers Builds trigger. `/api/health` reports the deployed commit, and it matched the pushed HEAD each time.
 
 **Major gaps and caveats**
@@ -80,10 +80,10 @@ Evidence keys:
 | 9.2 | Email binding and templates | Verified (config + accepted sends) | — | Inbox check |
 | 10.1 | Secrets untouched; admin vars preserved | Verified | `keep_vars: true`; bindings after deploy match the originals | — |
 | 11 | GitHub-connected Workers Builds deployment; version verified | Verified (with caveat) | 7 successful builds on trigger `d85467ea…`; health commit = HEAD | Push webhook not firing |
-| 12 | Served from root; HTTPS; SPA routes; no hardcoded hostname | Verified | P: `/`, `/trips/x`, `/admin` → 200 over HTTPS; links use `APP_PUBLIC_URL` | — |
+| 12 | Served from root; HTTPS; SPA routes; no hardcoded hostname | Verified | P: `/`, `/trips/x`, `/admin` → 200 over HTTPS; `http://` → 301 to HTTPS (Worker-enforced) + HSTS; links use `APP_PUBLIC_URL` | — |
 | 13 | Security baseline | Verified | T suites; parameterized SQL; CSRF tests; P: cross-origin POST 403 | See §8 risks |
 | 13.1 | API cost-abuse protection | Verified | T: LLM per-minute limit, size limits; caps documented | — |
-| 14 | Automated tests | Verified | 98/98 | — |
+| 14 | Automated tests | Verified | 99/99 | — |
 | 17 / 18 | Progress log, README, reports | Verified | `PROGRESS.md`, `README.md`, this file, `BUILD_RESULTS.json` | — |
 
 ## 3. What Was Built
@@ -160,7 +160,7 @@ Evidence keys:
 
 | Check | Command / procedure | Environment | Result |
 |---|---|---|---|
-| Automated tests | `npm test` (Vitest 4.1.12 + @cloudflare/vitest-plugin 1.5.1) | local workerd + D1; OpenAI, Google and email mocked | **98 passed, 0 failed, 0 skipped** (admin 34, trips 24, auth 20, llm-usage 18, smoke 2), last run 18:36Z |
+| Automated tests | `npm test` (Vitest 4.1.12 + @cloudflare/vitest-plugin 1.5.1) | local workerd + D1; OpenAI, Google and email mocked | **99 passed, 0 failed, 0 skipped** (admin 34, trips 24, auth 20, llm-usage 18, smoke 3), last run ~18:42Z |
 | Typecheck | `npm run typecheck` (TypeScript 7.0.2) | local | pass |
 | Build | `npm run build` (Vite 8) | local + Workers Builds | pass |
 | Live planner (real APIs) | `e2e.mjs` vs `wrangler dev` | local | pass: 5 days, 21/21 → 24/24 verified, patch preserved |
@@ -171,7 +171,7 @@ Evidence keys:
 | Production admin | `prod-admin.mjs` | prod, 18:12Z and 18:38Z | pass: forced change, 403s before change, weak password rejected, old password rejected, overview/users/trips/usage/monitoring/audit/admins correct, separation, logout |
 | Cost recomputation | stored tokens × stored pricing snapshot | prod | exact match (e.g. 7,630 in / 4,096 cached / 169 out → $0.0009387) |
 | Bindings | Cloudflare API `GET workers/scripts/{name}/settings` | prod | ASSETS, DB (d1), EMAIL (send_email); APP_PUBLIC_URL, EMAIL_FROM, LLM_MODEL, LLM_PROVIDER (plain_text, preserved); OPENAI_API_KEY, GOOGLE_MAPS_API_KEY (secret, preserved) |
-| HTTPS, domain, SPA | `curl` | prod | `/`, `/trips/xyz`, `/api/health` → 200 over HTTPS on the custom domain |
+| HTTPS, domain, SPA | `curl` | prod, ~18:42Z, `c06620c` | `/`, `/trips/xyz`, `/admin`, `/favicon.svg`, `/api/health` → 200 over HTTPS on the custom domain; `http://…/trips` → 301 to `https://…/trips`; `strict-transport-security: max-age=31536000` |
 | UI review | Playwright + Chrome headless shell, 1440/1920/390 px | local | Done; found and fixed 3 bugs (map tile host, initial map fit, mobile day-header layout) |
 
 The `npm test` checks are mocked. All P checks used the real OpenAI, Google Places, Email Service, D1 and custom domain. Scratch scripts live outside the repo (in the agent's scratchpad) and are described here.
@@ -186,7 +186,9 @@ The `npm test` checks are mocked. All P checks used the real OpenAI, Google Plac
   - `e5c021b`: map/mobile fixes, docs
   - `81a0be6`: two-phase generation
   - `df2a383`: currency enforcement, honest no-change
-  - Final docs commit(s): see `BUILD_RESULTS.json` and the final chat response.
+  - `1486732`: reports, admin select widths
+  - `c06620c`: HTTP→HTTPS redirect + HSTS (Worker now runs first for all paths)
+  - A final docs-only commit updates these reports; its deployment is confirmed in the final chat response.
 - **Workers Builds:** trigger `d85467ea-cc51-4d5f-960e-6a106d8d23d2` (deploy command `npx wrangler deploy`, branch `main`). Every build was started via the API on this trigger; the push webhook didn't fire.
 
   | Build | Result | Notes |
@@ -196,6 +198,8 @@ The `npm test` checks are mocked. All P checks used the real OpenAI, Google Plac
   | `475dfdfc` | success | → `e5c021b` |
   | `dd84d576` | success | → `81a0be6` |
   | `8b7a5961` | success | → `df2a383` |
+  | `a3406d50` | success | → `1486732` |
+  | `e4ac51c4` | success | → `c06620c` |
 
   Each was verified with `/api/health` `commit` = pushed SHA and `buildSource: workers-builds`.
 - **Resources created:** D1 `bh-travel-v1-claude-claude-db` (`f0ebeb80-b6b6-4360-bc95-87674614a4f4`, ENAM). No other resources were created.
@@ -278,7 +282,7 @@ By operation:
 
 ## 11. Agent Execution Summary
 
-- **Start:** 2026-11-04T17:24:43Z (observed: first command output). **End:** recorded in `BUILD_RESULTS.json` (`execution.endedAt`).
+- **Start:** 2026-11-04T17:24:43Z (observed: first command output). **End:** 2026-11-04T18:43:23Z (when the reports were finalized; the docs commit and push follow). **Elapsed:** 4,720 s (≈1 h 19 min) of the 8-hour (28,800 s) window.
 - **Timeline (observed):**
 
   | Time | Milestone |
@@ -296,7 +300,9 @@ By operation:
   | 18:30 | Two-phase generation; `81a0be6` deployed |
   | 18:33 | `df2a383` deployed |
   | 18:35 | Production §1.4 journey |
-  | 18:38 | Final metrics and reports |
+  | 18:38 | Final metrics and reports; `1486732` deployed |
+  | 18:40 | Smoke test found that plain HTTP wasn't redirected |
+  | 18:42 | `c06620c` (Worker-enforced HTTPS + HSTS) deployed and verified |
 
 - **Self-corrections:**
   1. Test config loaded the real `.dev.vars`; it was isolated in `test/`.
@@ -307,6 +313,7 @@ By operation:
   6. One test assumed no Places cache; the assertion was fixed.
   7. UI review found the wrong tile host, then CARTO's key requirement (switched to OSM), the map fit timing, the mobile header layout, and admin selects ignoring width classes.
   8. "No-change" edits were shown as changes; real diffing was added.
+  9. Plain HTTP was served without a redirect; the Worker now enforces HTTPS. This needed `run_worker_first: true` so page requests reach the Worker; zone settings were not touched.
 - **Retries and blocks:**
   - The Playwright browser download stalled, so Chrome-for-Testing was fetched directly with user-space libraries.
   - The disposable-inbox test was denied by the permission policy and not worked around.

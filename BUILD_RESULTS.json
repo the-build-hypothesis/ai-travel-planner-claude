@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "specVersion": "1.7",
   "project": "AI Travel Planner",
-  "generatedAt": "2026-11-04T18:39:32.637Z",
+  "generatedAt": "2026-11-04T18:43:23.444Z",
   "execution": {
     "startedAt": "2026-11-04T17:24:43Z",
-    "endedAt": null,
-    "elapsedSeconds": null,
+    "endedAt": "2026-11-04T18:43:23Z",
+    "elapsedSeconds": 4720,
     "timeLimitSeconds": 28800,
     "completionReason": "All major requirements implemented, tested and deployed; finished well within the time window",
     "humanInterventions": [],
@@ -17,7 +17,7 @@
   "repository": {
     "remote": "git@github.com:the-build-hypothesis/ai-travel-planner-claude.git",
     "branch": "main",
-    "commitSha": "df2a383d2d9c6296a450ce4d3f68b7897613077c"
+    "commitSha": "c06620cd542a7cb6b308ce562c3fcf6d81413b36"
   },
   "deployment": {
     "status": "deployed",
@@ -25,7 +25,7 @@
     "workerName": "ai-travel-planner-claude",
     "githubBuildsVerified": true,
     "githubBuildsNote": "Workers Builds trigger d85467ea-cc51-4d5f-960e-6a106d8d23d2 (GitHub-connected) built main successfully; builds had to be started via the Cloudflare Builds API because git pushes did not auto-trigger them.",
-    "deployedCommitSha": "df2a383d2d9c6296a450ce4d3f68b7897613077c",
+    "deployedCommitSha": "c06620cd542a7cb6b308ce562c3fcf6d81413b36",
     "verificationMethod": "GET /api/health -> commit, buildSource=workers-builds"
   },
   "requirements": [
@@ -415,7 +415,8 @@
       "description": "Served at APP_PUBLIC_URL root over HTTPS, SPA routes",
       "status": "Verified",
       "evidence": [
-        "curl /, /trips/xyz, /api/health -> 200"
+        "curl /, /trips/xyz, /admin, /api/health -> 200 over HTTPS",
+        "http:// -> 301 https:// + HSTS (Worker-enforced)"
       ]
     },
     {
@@ -440,7 +441,7 @@
       "description": "Automated tests",
       "status": "Verified",
       "evidence": [
-        "98/98 passing"
+        "99/99 passing"
       ]
     },
     {
@@ -469,7 +470,7 @@
       "environment": "local workerd + D1, external APIs mocked",
       "result": "passed",
       "counts": {
-        "passed": 98,
+        "passed": 99,
         "failed": 0,
         "skipped": 0,
         "files": 5
@@ -545,8 +546,9 @@
       "environment": "Cloudflare Workers Builds",
       "result": "passed",
       "counts": {
-        "successfulBuilds": 5
-      }
+        "successfulBuilds": 7
+      },
+      "evidence": "29841bd0, dbbb9670, 475dfdfc, dd84d576, 8b7a5961, a3406d50, e4ac51c4"
     },
     {
       "name": "ui-visual-review",
@@ -675,6 +677,6 @@
       "Blocked": 1
     },
     "totalRequirements": 50,
-    "outcome": "Complete AI Travel Planner deployed on Cloudflare via GitHub-connected Workers Builds; traveler, guest, account, admin and cost-tracking features verified in production with real OpenAI and Google Places; 98/98 tests pass. Gaps: real-inbox email receipt not observed (sends accepted) and push webhook not auto-triggering builds."
+    "outcome": "Complete AI Travel Planner deployed on Cloudflare via GitHub-connected Workers Builds; traveler, guest, account, admin and cost-tracking features verified in production with real OpenAI and Google Places; 99/99 tests pass. Gaps: real-inbox email receipt not observed (sends accepted) and push webhook not auto-triggering builds."
   }
 }

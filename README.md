@@ -19,7 +19,7 @@ Static assets (dist/client) are served by the same Worker (Workers Static Assets
 
 | Layer | Choice |
 |---|---|
-| Runtime | One Cloudflare Worker (`CLOUDFLARE_WORKER_NAME`), `run_worker_first` for `/api/*` |
+| Runtime | One Cloudflare Worker (`CLOUDFLARE_WORKER_NAME`) with `run_worker_first: true`: it enforces HTTPS (301 + HSTS), handles `/api/*`, and serves the SPA through the `ASSETS` binding |
 | API | Hono, Zod validation, TypeScript |
 | Data | Cloudflare D1 (SQLite), SQL migrations in `migrations/` |
 | Frontend | React 19, React Router, Tailwind CSS v4, Vite, Leaflet (CARTO/OSM tiles), lucide icons |
