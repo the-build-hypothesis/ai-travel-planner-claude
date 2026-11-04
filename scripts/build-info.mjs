@@ -5,7 +5,9 @@
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
-let sha = process.env.WORKERS_CI_COMMIT_SHA || process.env.GITHUB_SHA || "";
+const isSha = (s) => /^[0-9a-f]{7,40}$/i.test(s || "");
+// WORKERS_CI_COMMIT_SHA may hold a branch name for manually triggered builds.
+let sha = [process.env.WORKERS_CI_COMMIT_SHA, process.env.GITHUB_SHA].find(isSha) || "";
 if (!sha) {
   try {
     sha = execSync("git rev-parse HEAD", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
