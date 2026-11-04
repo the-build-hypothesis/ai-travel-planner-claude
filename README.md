@@ -42,8 +42,8 @@ Key source locations:
 
 1. The user message, the current trip state (preferences + compact itinerary) and the last 10 messages are sent to the configured model with a strict JSON schema.
 2. The model returns `{reply, intent, preferenceUpdates, itinerary: {mode: replace_all|patch, days[], removeDayNumbers[]}, suggestions}`.
-3. The server validates it with Zod (one bounded retry if it is malformed). For `patch`, only the returned days are replaced and every other day is kept exactly as it was. Activities that keep their id and location keep their verified place data.
-4. If a generated plan is missing days (e.g. the model returns 3 of 5), the server asks for the remaining days in up to 3 bounded follow-up calls.
+3. The server validates it with Zod (one bounded retry if it is malformed). For `patch`, only the returned days are replaced and every other day is kept exactly as it was. Activities that keep their id and location keep their verified place data. The `changedDays` reported to the UI are found by diffing, so a day the model echoed back unchanged isn't counted. If a modification changed nothing, the reply says so.
+4. **New plans are generated in two phases.** First the chat turn returns a day-by-day *outline* (title, area, summary, cost). Then each outlined day is filled with detailed activities in parallel per-day calls (`trip_plan_day`, up to 5 at a time). A 5-day plan takes about 20–26 s in production, down from about 60 s in one call. If a budget currency is known, the outline is switched to it before filling, so all costs can be compared with the budget. Missing days (the outline is shorter than the trip) are requested in up to 3 bounded follow-up calls. Days that still fail are left as outlines, and the reply explains this.
 5. New or changed activities that have a `locationName` are looked up with Google Places (bounded, concurrent, cached). A match is only accepted if it is within 60 km of the AI's estimated location. Matches are marked **Verified**; everything else is labelled an AI estimate in the UI.
 
 Users can also edit directly (reorder, move between days, edit, add, remove, add from place search). Those edits go through `PUT /api/trips/:id/itinerary` with optimistic concurrency (`baseVersion`). The server re-validates the itinerary and never accepts client-supplied "verified" place data that it didn't fetch itself.
@@ -177,7 +177,7 @@ All OpenAI and Google calls are mocked with a stubbed `fetch`, and the email bin
 
 ## Known limitations
 
-- Generating a full multi-day itinerary with `gpt-4o-mini` takes about 30–60 s, which the UI covers with a progress indicator. Responses are not streamed.
+- Generating a new multi-day itinerary takes about 20–30 s (outline + parallel day fill), which the UI covers with a progress indicator. Responses are not streamed. Edits take about 5–15 s.
 - Google Places verification costs much more than the LLM (about $0.035 per verified stop, roughly $0.75 for a 5-day plan, before Google's free tier).
 - No photos (Place Photos would add a billed SKU).
 - PBKDF2 is capped at 100k iterations by the Workers runtime. Argon2/bcrypt aren't available natively.

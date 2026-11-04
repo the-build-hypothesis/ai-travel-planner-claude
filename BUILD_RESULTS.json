@@ -1,0 +1,680 @@
+{
+  "schemaVersion": 1,
+  "specVersion": "1.7",
+  "project": "AI Travel Planner",
+  "generatedAt": "2026-11-04T18:39:32.637Z",
+  "execution": {
+    "startedAt": "2026-11-04T17:24:43Z",
+    "endedAt": null,
+    "elapsedSeconds": null,
+    "timeLimitSeconds": 28800,
+    "completionReason": "All major requirements implemented, tested and deployed; finished well within the time window",
+    "humanInterventions": [],
+    "blockedActions": [
+      "Creating a disposable mail.tm inbox for email E2E was denied by the tool permission classifier"
+    ]
+  },
+  "repository": {
+    "remote": "git@github.com:the-build-hypothesis/ai-travel-planner-claude.git",
+    "branch": "main",
+    "commitSha": "df2a383d2d9c6296a450ce4d3f68b7897613077c"
+  },
+  "deployment": {
+    "status": "deployed",
+    "publicUrl": "https://ai-travel-planner-v1-claude.thebuildhypothesis.com",
+    "workerName": "ai-travel-planner-claude",
+    "githubBuildsVerified": true,
+    "githubBuildsNote": "Workers Builds trigger d85467ea-cc51-4d5f-960e-6a106d8d23d2 (GitHub-connected) built main successfully; builds had to be started via the Cloudflare Builds API because git pushes did not auto-trigger them.",
+    "deployedCommitSha": "df2a383d2d9c6296a450ce4d3f68b7897613077c",
+    "verificationMethod": "GET /api/health -> commit, buildSource=workers-builds"
+  },
+  "requirements": [
+    {
+      "ref": "2.1-a",
+      "description": "Conversational AI: understand requests, context, clarifying questions, personalization",
+      "status": "Verified",
+      "evidence": [
+        "test/trips.test.ts: asks clarifying questions",
+        "prod journey step 1"
+      ]
+    },
+    {
+      "ref": "2.1-b",
+      "description": "Reference current itinerary, modify plans, preserve unrelated details",
+      "status": "Verified",
+      "evidence": [
+        "test/trips.test.ts: modifies only the requested day",
+        "prod journey preservedOthers=true"
+      ]
+    },
+    {
+      "ref": "2.1-c",
+      "description": "Distinguish verified information from estimates",
+      "status": "Verified",
+      "evidence": [
+        "test/trips.test.ts: forged place rejected",
+        "UI badges (screenshot review)"
+      ]
+    },
+    {
+      "ref": "2.1-d",
+      "description": "Conversation history available on reopen",
+      "status": "Verified",
+      "evidence": [
+        "test/trips.test.ts",
+        "prod e2e: 4 messages on reopen"
+      ]
+    },
+    {
+      "ref": "2.2",
+      "description": "Trip creation/management with all trip fields; incomplete requests",
+      "status": "Verified",
+      "evidence": [
+        "test/trips.test.ts: creation & validation"
+      ]
+    },
+    {
+      "ref": "2.3-a",
+      "description": "Structured day-by-day itinerary with times, durations, locations, costs, transport; dedicated UI",
+      "status": "Verified",
+      "evidence": [
+        "src/shared/schemas.ts",
+        "prod journey"
+      ]
+    },
+    {
+      "ref": "2.3-b",
+      "description": "Geographically/temporally practical schedules",
+      "status": "Partial",
+      "evidence": [
+        "prompt rules + per-day area outline; no server-side travel-time validation"
+      ]
+    },
+    {
+      "ref": "2.4",
+      "description": "Itinerary editing (add/remove/replace/rearrange/regenerate/persist)",
+      "status": "Verified",
+      "evidence": [
+        "test/trips.test.ts: direct edits, concurrency"
+      ]
+    },
+    {
+      "ref": "2.5",
+      "description": "Destination & attraction research with real data; no fabricated facts as verified",
+      "status": "Verified",
+      "evidence": [
+        "prod: 66 Places lookups, 0 errors",
+        "test/llm-usage.test.ts: place search"
+      ]
+    },
+    {
+      "ref": "2.6",
+      "description": "Interactive map with per-day locations",
+      "status": "Verified",
+      "evidence": [
+        "UI screenshot review after tile-host fix"
+      ]
+    },
+    {
+      "ref": "2.7",
+      "description": "Polished responsive UI, loading/empty/error states",
+      "status": "Verified",
+      "evidence": [
+        "UI screenshots desktop + mobile"
+      ]
+    },
+    {
+      "ref": "3.1",
+      "description": "Guest access with secure server-side guest identifiers",
+      "status": "Verified",
+      "evidence": [
+        "test/trips.test.ts: guests cannot access other guests' trips",
+        "prod guest e2e"
+      ]
+    },
+    {
+      "ref": "3.2",
+      "description": "Registration (unique case-insensitive email, hashing, validation, verification, UUID)",
+      "status": "Verified",
+      "evidence": [
+        "test/auth.test.ts: registration",
+        "prod: duplicate identical response"
+      ]
+    },
+    {
+      "ref": "3.3",
+      "description": "Login/logout/sessions/expiry/invalidation/rate limiting/HttpOnly cookies",
+      "status": "Verified",
+      "evidence": [
+        "test/auth.test.ts: login, logout and sessions"
+      ]
+    },
+    {
+      "ref": "3.4",
+      "description": "Registered user features and server-side authorization",
+      "status": "Verified",
+      "evidence": [
+        "test/trips.test.ts: users cannot access other users' trips",
+        "prod account flow"
+      ]
+    },
+    {
+      "ref": "3.5",
+      "description": "Guest-to-account migration without claiming others or duplicating",
+      "status": "Verified",
+      "evidence": [
+        "test/trips.test.ts: guest-to-account migration",
+        "prod migratedTrips=1"
+      ]
+    },
+    {
+      "ref": "4.1",
+      "description": "Cloudflare Email Service binding; EMAIL_FROM sender",
+      "status": "Verified",
+      "evidence": [
+        "deployed binding EMAIL (send_email)",
+        "prod sends accepted, no app_errors"
+      ]
+    },
+    {
+      "ref": "4.2",
+      "description": "Email verification tokens (hashed, expiring, single-use, resend rate limited)",
+      "status": "Verified",
+      "evidence": [
+        "test/auth.test.ts: email verification",
+        "real-inbox click-through blocked (see checks)"
+      ]
+    },
+    {
+      "ref": "4.3",
+      "description": "Password recovery (Forgot Password link, 30-min single-use token, session invalidation, no enumeration, rate limit)",
+      "status": "Partial",
+      "evidence": [
+        "test/auth.test.ts: password recovery (verified)",
+        "prod: identical responses; real-inbox reset not observed"
+      ]
+    },
+    {
+      "ref": "4.4",
+      "description": "Email delivery failure handling",
+      "status": "Verified",
+      "evidence": [
+        "test/auth.test.ts: reports delivery failure; 503 without binding"
+      ]
+    },
+    {
+      "ref": "5.1",
+      "description": "Separate admin authentication and sessions",
+      "status": "Verified",
+      "evidence": [
+        "test/admin.test.ts",
+        "prod admin verification"
+      ]
+    },
+    {
+      "ref": "5.2",
+      "description": "Bootstrap admin with forced password change",
+      "status": "Verified",
+      "evidence": [
+        "test/admin.test.ts",
+        "prod: 403 PASSWORD_CHANGE_REQUIRED before change"
+      ]
+    },
+    {
+      "ref": "5.3",
+      "description": "Administrator account management incl. last-admin protection",
+      "status": "Verified",
+      "evidence": [
+        "test/admin.test.ts"
+      ]
+    },
+    {
+      "ref": "5.4",
+      "description": "Application user management incl. protected deletion",
+      "status": "Verified",
+      "evidence": [
+        "test/admin.test.ts: user deletion requires confirmEmail"
+      ]
+    },
+    {
+      "ref": "5.5",
+      "description": "Trip inspection with sort/filter/pagination",
+      "status": "Verified",
+      "evidence": [
+        "test/admin.test.ts",
+        "prod: trips sorted newest first"
+      ]
+    },
+    {
+      "ref": "6.1",
+      "description": "Overview metrics (lifetime vs period, costs, guests)",
+      "status": "Verified",
+      "evidence": [
+        "test/admin.test.ts",
+        "prod overview"
+      ]
+    },
+    {
+      "ref": "6.2",
+      "description": "Date-range presets + custom range, UTC",
+      "status": "Verified",
+      "evidence": [
+        "test/admin.test.ts: range filtering",
+        "prod: last hour/day/Jan 2020"
+      ]
+    },
+    {
+      "ref": "6.3",
+      "description": "User metrics list and detail",
+      "status": "Verified",
+      "evidence": [
+        "test/admin.test.ts",
+        "prod user detail"
+      ]
+    },
+    {
+      "ref": "6.4",
+      "description": "Trip metrics list",
+      "status": "Verified",
+      "evidence": [
+        "test/admin.test.ts",
+        "prod trips list"
+      ]
+    },
+    {
+      "ref": "6.5",
+      "description": "Request-level usage records, no credentials",
+      "status": "Verified",
+      "evidence": [
+        "test/llm-usage.test.ts: records LLM usage per request"
+      ]
+    },
+    {
+      "ref": "6.6",
+      "description": "LLM cost tracking with model pricing and historical snapshots",
+      "status": "Verified",
+      "evidence": [
+        "test/llm-usage.test.ts: cost calculations",
+        "prod recomputed cost matches"
+      ]
+    },
+    {
+      "ref": "6.7",
+      "description": "Google Places cost tracking by SKU",
+      "status": "Verified",
+      "evidence": [
+        "test/llm-usage.test.ts",
+        "prod 66 x $0.035"
+      ]
+    },
+    {
+      "ref": "6.8",
+      "description": "Cost accuracy disclaimers and unattributed usage",
+      "status": "Verified",
+      "evidence": [
+        "admin usage attribution split"
+      ]
+    },
+    {
+      "ref": "6.9",
+      "description": "Monitoring visualizations",
+      "status": "Verified",
+      "evidence": [
+        "admin overview charts (screenshot)"
+      ]
+    },
+    {
+      "ref": "6.10",
+      "description": "Operational monitoring (failures, latency, errors, volume)",
+      "status": "Verified",
+      "evidence": [
+        "prod monitoring endpoint"
+      ]
+    },
+    {
+      "ref": "7",
+      "description": "Administrative audit logging, immutable",
+      "status": "Verified",
+      "evidence": [
+        "test/admin.test.ts: audit triggers",
+        "prod audit entries"
+      ]
+    },
+    {
+      "ref": "8.1",
+      "description": "Runtime LLM provider/model configuration, no silent substitution",
+      "status": "Verified",
+      "evidence": [
+        "test/llm-usage.test.ts: provider selection, no fallback",
+        "prod /api/health"
+      ]
+    },
+    {
+      "ref": "8.2",
+      "description": "Provider abstraction",
+      "status": "Verified",
+      "evidence": [
+        "src/worker/llm/types.ts",
+        "src/worker/llm/openai.ts"
+      ]
+    },
+    {
+      "ref": "8.3",
+      "description": "Structured response validation",
+      "status": "Verified",
+      "evidence": [
+        "test/llm-usage.test.ts: structured output & error handling"
+      ]
+    },
+    {
+      "ref": "8.4",
+      "description": "Reliability: timeouts, bounded retries, rate-limit handling",
+      "status": "Verified",
+      "evidence": [
+        "test/llm-usage.test.ts"
+      ]
+    },
+    {
+      "ref": "9.1",
+      "description": "Cloudflare resources: existing Worker, prefixed D1, migrations, bindings verified",
+      "status": "Verified",
+      "evidence": [
+        "D1 bh-travel-v1-claude-claude-db",
+        "bindings via API"
+      ]
+    },
+    {
+      "ref": "9.2",
+      "description": "Email Service binding configured with templates",
+      "status": "Verified",
+      "evidence": [
+        "src/worker/services/email.ts",
+        "deployed binding"
+      ]
+    },
+    {
+      "ref": "10.1",
+      "description": "Secrets and admin-managed config preserved",
+      "status": "Verified",
+      "evidence": [
+        "keep_vars: true; post-deploy bindings unchanged"
+      ]
+    },
+    {
+      "ref": "11",
+      "description": "GitHub-connected Workers Builds deployment with commit verification",
+      "status": "Verified",
+      "evidence": [
+        "builds 29841bd0, dbbb9670, 475dfdfc, dd84d576, 8b7a5961 succeeded",
+        "/api/health commit = HEAD",
+        "caveat: push webhook did not auto-trigger; builds started via API on same trigger"
+      ]
+    },
+    {
+      "ref": "12",
+      "description": "Served at APP_PUBLIC_URL root over HTTPS, SPA routes",
+      "status": "Verified",
+      "evidence": [
+        "curl /, /trips/xyz, /api/health -> 200"
+      ]
+    },
+    {
+      "ref": "13",
+      "description": "Security requirements",
+      "status": "Verified",
+      "evidence": [
+        "test/auth.test.ts CSRF",
+        "prod cross-origin POST 403"
+      ]
+    },
+    {
+      "ref": "13.1",
+      "description": "API cost abuse protection",
+      "status": "Verified",
+      "evidence": [
+        "test/trips.test.ts: per-actor LLM rate limits"
+      ]
+    },
+    {
+      "ref": "14",
+      "description": "Automated tests",
+      "status": "Verified",
+      "evidence": [
+        "98/98 passing"
+      ]
+    },
+    {
+      "ref": "14.5-7",
+      "description": "Production email workflow verification",
+      "status": "Blocked",
+      "evidence": [
+        "disposable inbox creation denied by tool permission policy; sends accepted by Email Service"
+      ]
+    },
+    {
+      "ref": "17-18",
+      "description": "Progress log, README, build reports",
+      "status": "Verified",
+      "evidence": [
+        "PROGRESS.md",
+        "README.md",
+        "BUILD_REPORT.md"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "name": "unit-integration-tests",
+      "command": "npm test",
+      "environment": "local workerd + D1, external APIs mocked",
+      "result": "passed",
+      "counts": {
+        "passed": 98,
+        "failed": 0,
+        "skipped": 0,
+        "files": 5
+      }
+    },
+    {
+      "name": "typecheck",
+      "command": "npm run typecheck",
+      "environment": "local",
+      "result": "passed"
+    },
+    {
+      "name": "client-build",
+      "command": "npm run build",
+      "environment": "local + Workers Builds",
+      "result": "passed"
+    },
+    {
+      "name": "live-local-planner",
+      "command": "scratch e2e.mjs against wrangler dev (real OpenAI + Places)",
+      "environment": "local",
+      "result": "passed"
+    },
+    {
+      "name": "prod-guest-flow",
+      "command": "scratch e2e.mjs against production",
+      "environment": "production",
+      "result": "passed",
+      "evidence": "5 days, 22/22 verified, day-3-only change, history on reopen"
+    },
+    {
+      "name": "prod-user-journey-1.4",
+      "command": "scratch journey.mjs (6 steps)",
+      "environment": "production",
+      "result": "passed",
+      "evidence": "plan 20.1s USD 18/18 verified; edits preserved other days"
+    },
+    {
+      "name": "prod-account-flow",
+      "command": "scratch prod-auth.mjs (example.com address)",
+      "environment": "production",
+      "result": "passed"
+    },
+    {
+      "name": "prod-email-inbox-click-through",
+      "command": "disposable inbox",
+      "environment": "production",
+      "result": "blocked",
+      "evidence": "tool permission policy"
+    },
+    {
+      "name": "prod-admin-flow",
+      "command": "scratch prod-admin.mjs",
+      "environment": "production",
+      "result": "passed",
+      "evidence": "forced change, metrics, date ranges, audit"
+    },
+    {
+      "name": "prod-bindings",
+      "command": "Cloudflare API workers/scripts/{name}/settings",
+      "environment": "production",
+      "result": "passed"
+    },
+    {
+      "name": "prod-https-domain",
+      "command": "curl https://ai-travel-planner-v1-claude.thebuildhypothesis.com/{,trips/xyz,api/health}",
+      "environment": "production",
+      "result": "passed"
+    },
+    {
+      "name": "workers-builds",
+      "command": "POST /builds/triggers/{trigger}/builds + poll",
+      "environment": "Cloudflare Workers Builds",
+      "result": "passed",
+      "counts": {
+        "successfulBuilds": 5
+      }
+    },
+    {
+      "name": "ui-visual-review",
+      "command": "Playwright + chrome-headless-shell screenshots (1440/1920/390px)",
+      "environment": "local",
+      "result": "passed",
+      "evidence": "3 UI bugs found and fixed"
+    }
+  ],
+  "integrations": {
+    "llm": {
+      "provider": "openai",
+      "model": "gpt-4o-mini",
+      "providerReportedModel": "gpt-4o-mini-2024-07-18",
+      "status": "verified-production"
+    },
+    "googlePlaces": {
+      "status": "verified-production",
+      "sku": "text_search_enterprise",
+      "requestsDuringVerification": 66,
+      "failures": 0
+    },
+    "maps": {
+      "status": "verified-ui",
+      "tiles": "OpenStreetMap standard tiles via Leaflet"
+    },
+    "cloudflareEmailService": {
+      "binding": "EMAIL",
+      "status": "send-accepted-production; inbox-delivery-unverified",
+      "verificationEmailTest": "tests-pass; production send accepted",
+      "resetEmailTest": "tests-pass; production send queued (async), no errors logged"
+    }
+  },
+  "infrastructure": {
+    "created": [
+      {
+        "type": "d1_database",
+        "name": "bh-travel-v1-claude-claude-db",
+        "id": "f0ebeb80-b6b6-4360-bc95-87674614a4f4"
+      }
+    ],
+    "modified": [
+      {
+        "type": "worker",
+        "name": "ai-travel-planner-claude",
+        "changes": [
+          "d1 binding DB",
+          "send_email binding EMAIL",
+          "static assets binding ASSETS",
+          "code deployments"
+        ]
+      }
+    ],
+    "migrations": {
+      "applied": [
+        "0001_initial.sql"
+      ],
+      "remote": "applied",
+      "local": "applied"
+    },
+    "customDomain": {
+      "hostname": "ai-travel-planner-v1-claude.thebuildhypothesis.com",
+      "status": "pre-existing, verified HTTPS"
+    }
+  },
+  "issues": [
+    {
+      "id": "builds-webhook",
+      "severity": "medium",
+      "impact": "git push does not auto-trigger Workers Builds",
+      "followUp": "Reconnect GitHub integration / webhook in Cloudflare dashboard"
+    },
+    {
+      "id": "email-inbox-unverified",
+      "severity": "medium",
+      "impact": "Verification/reset email receipt not observed in a real inbox",
+      "followUp": "Reviewer to register with a real inbox"
+    },
+    {
+      "id": "places-cost",
+      "severity": "low",
+      "impact": "~$0.65-0.90 Places cost per 5-day plan",
+      "followUp": "Verify fewer stops or use cheaper field mask"
+    },
+    {
+      "id": "no-streaming",
+      "severity": "low",
+      "impact": "20-30s wait for new plans",
+      "followUp": "Stream outline / progressive day fill"
+    },
+    {
+      "id": "schedule-feasibility",
+      "severity": "low",
+      "impact": "Feasibility relies on prompt",
+      "followUp": "Server-side travel-time validation"
+    }
+  ],
+  "costs": {
+    "currency": "USD",
+    "measuredAppLevel": {
+      "source": "production usage_events (app-level estimates)",
+      "llm": 0.0260331,
+      "googlePlaces": 2.31,
+      "total": 2.3360331,
+      "llmRequests": 25,
+      "placesRequests": 66
+    },
+    "providerBilled": {
+      "llm": null,
+      "googlePlaces": null,
+      "note": "Not reconciled with provider invoices"
+    },
+    "localDevRuns": {
+      "amount": null,
+      "note": "Recorded only in local D1; not totalled"
+    },
+    "agentCompute": null
+  },
+  "summary": {
+    "requirementStatusCounts": {
+      "Verified": 47,
+      "Implemented but Unverified": 0,
+      "Partial": 2,
+      "Failed": 0,
+      "Not Started": 0,
+      "Blocked": 1
+    },
+    "totalRequirements": 50,
+    "outcome": "Complete AI Travel Planner deployed on Cloudflare via GitHub-connected Workers Builds; traveler, guest, account, admin and cost-tracking features verified in production with real OpenAI and Google Places; 98/98 tests pass. Gaps: real-inbox email receipt not observed (sends accepted) and push webhook not auto-triggering builds."
+  }
+}

@@ -280,7 +280,7 @@ export function Select({ label, className, id, children, ...rest }: React.Select
   const auto = useId();
   const sid = id ?? auto;
   const el = (
-    <select id={sid} {...rest} className={cx(inputBase, "pr-8", className)}>
+    <select id={sid} {...rest} className={cx(/(^|\s)w-/.test(className ?? "") ? inputBase.replace("w-full", "") : inputBase, "pr-8", className)}>
       {children}
     </select>
   );
