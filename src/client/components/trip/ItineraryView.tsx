@@ -142,7 +142,7 @@ function DayCard({ day, currency, allDays, highlighted, busy, actions }: { day: 
           <h3 className="font-display text-lg font-semibold text-slate-900">{day.title}</h3>
           {day.summary && <p className="mt-0.5 text-sm text-slate-600">{day.summary}</p>}
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="order-last flex w-full items-center justify-between gap-1.5 pl-14 sm:order-none sm:w-auto sm:justify-end sm:pl-0">
           {day.estimatedDayCost !== null && (
             <Badge tone="slate" title="Estimated total for the group for this day. Not a quote.">
               est. {money(day.estimatedDayCost, currency)}
@@ -235,7 +235,7 @@ function ActivityRow({
             </div>
             <div className="relative flex shrink-0 items-center gap-1">
               {a.estimatedCost && (
-                <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-800 ring-1 ring-amber-200" title={a.estimatedCost.note ?? "AI estimate — not a verified price"}>
+                <span className="hidden rounded-md bg-amber-50 sm:inline px-1.5 py-0.5 text-xs font-medium text-amber-800 ring-1 ring-amber-200" title={a.estimatedCost.note ?? "AI estimate — not a verified price"}>
                   {a.estimatedCost.amount === 0 ? "Free (est.)" : `est. ${money(a.estimatedCost.amount, a.estimatedCost.currency || currency)}${a.estimatedCost.per === "person" ? "/pp" : ""}`}
                 </span>
               )}
@@ -283,6 +283,11 @@ function ActivityRow({
           {a.description && <p className="mt-2 text-sm leading-relaxed text-slate-600">{a.description}</p>}
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            {a.estimatedCost && (
+              <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-800 ring-1 ring-amber-200 sm:hidden">
+                {a.estimatedCost.amount === 0 ? "Free (est.)" : `est. ${money(a.estimatedCost.amount, a.estimatedCost.currency || currency)}${a.estimatedCost.per === "person" ? "/pp" : ""}`}
+              </span>
+            )}
             {a.place ? (
               <Badge tone="green" title={`Matched with Google Places on ${new Date(a.place.fetchedAt).toLocaleDateString()}`}>
                 <BadgeCheck className="size-3.5" /> Verified place

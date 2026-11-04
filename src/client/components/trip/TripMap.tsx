@@ -39,18 +39,27 @@ export function TripMap({
   const map = useRef<L.Map | null>(null);
   const layer = useRef<L.LayerGroup | null>(null);
   const markers = useRef(new Map<string, L.Marker>());
+  const lastBounds = useRef<L.LatLngBounds | null>(null);
+  const userMoved = useRef(false);
 
   useEffect(() => {
     if (!el.current || map.current) return;
     const m = L.map(el.current, { zoomControl: true, scrollWheelZoom: true, worldCopyJump: true }).setView([25, 10], 2);
-    L.tileLayer("https://{s}.basemap.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
-      subdomains: "abcd",
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(m);
     layer.current = L.layerGroup().addTo(m);
     map.current = m;
-    const ro = new ResizeObserver(() => m.invalidateSize());
+    m.on("dragstart zoomstart", (e) => {
+      // Only user-initiated moves stop auto-fitting (programmatic fits pass no originalEvent).
+      if ((e as unknown as { originalEvent?: Event }).originalEvent) userMoved.current = true;
+    });
+    m.on("mousedown touchstart wheel", () => (userMoved.current = true));
+    const ro = new ResizeObserver(() => {
+      m.invalidateSize();
+      if (lastBounds.current && !userMoved.current) m.fitBounds(lastBounds.current, { padding: [40, 40], maxZoom: 15, animate: false });
+    });
     ro.observe(el.current);
     return () => {
       ro.disconnect();
@@ -94,12 +103,16 @@ export function TripMap({
       });
       if (pts.length > 1) L.polyline(pts, { color, weight: 3, opacity: 0.6, dashArray: "6 6" }).addTo(lg);
     }
+    m.invalidateSize();
+    userMoved.current = false;
     if (focus?.activityId && markers.current.has(focus.activityId)) {
       const mk = markers.current.get(focus.activityId)!;
-      m.setView(mk.getLatLng(), Math.max(m.getZoom(), 15), { animate: true });
+      lastBounds.current = null;
+      m.setView(mk.getLatLng(), 15, { animate: false });
       mk.openPopup();
     } else if (bounds.length) {
-      m.fitBounds(L.latLngBounds(bounds), { padding: [40, 40], maxZoom: 15, animate: true });
+      lastBounds.current = L.latLngBounds(bounds);
+      m.fitBounds(lastBounds.current, { padding: [40, 40], maxZoom: 15, animate: false });
     }
   }, [itinerary, visibleDays, focus, onSelectActivity]);
 
