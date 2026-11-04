@@ -381,6 +381,13 @@ export const tripRoutes = new Hono<AppBindings>()
       const outline = merged.itinerary;
       const emptyDays = outline.days.filter((d) => d.activities.length === 0 && merged.changedDays.includes(d.dayNumber)).map((d) => d.dayNumber);
       if (emptyDays.length) {
+        // Costs must be comparable with the budget: a fresh outline adopts the budget currency
+        // (outline day costs in another currency are dropped; the fill calls re-estimate them).
+        const budgetCurrency = merged.preferences.budgetCurrency;
+        if (budgetCurrency && outline.currency !== budgetCurrency && outline.days.every((d) => d.activities.length === 0)) {
+          outline.currency = budgetCurrency;
+          for (const d of outline.days) d.estimatedDayCost = null;
+        }
         const today = new Date().toISOString().slice(0, 10);
         const filled: LlmDay[] = [];
         const queue = [...emptyDays];
@@ -436,6 +443,23 @@ export const tripRoutes = new Hono<AppBindings>()
       }
     }
 
+    // Report only days whose content actually changed (the model sometimes echoes a day unchanged).
+    let noChangeNote = false;
+    if (itinerary && merged.itinerary && turn.data.itinerary?.mode === "patch") {
+      const before = new Map(itinerary.days.map((d) => [d.dayNumber, JSON.stringify(d)]));
+      const actual = merged.changedDays.filter((n) => {
+        const after = merged.itinerary!.days.find((d) => d.dayNumber === n);
+        return !after || before.get(n) !== JSON.stringify(after);
+      });
+      const removed = turn.data.itinerary.removeDayNumbers.length > 0;
+      if (!actual.length && !removed) {
+        merged = { ...merged, itinerary, changedDays: [], itineraryChanged: false };
+        noChangeNote = turn.data.intent === "modify";
+      } else {
+        merged = { ...merged, changedDays: actual };
+      }
+    }
+
     let nextItinerary = merged.itinerary;
     let verification = { lookups: 0, verified: 0, failed: 0 };
     if (nextItinerary && merged.itineraryChanged && placesConfigured(c.env)) {
@@ -466,7 +490,9 @@ export const tripRoutes = new Hono<AppBindings>()
       role: "assistant",
       content: incomplete
         ? `${turn.data.reply}\n\nNote: I couldn't finish every day this time — ask me to "plan the remaining days" to complete the itinerary.`
-        : turn.data.reply,
+        : noChangeNote
+          ? `${turn.data.reply}\n\nNote: the itinerary itself wasn't changed this time. Try a more specific request, e.g. "add a kid-friendly activity to day 2 afternoon".`
+          : turn.data.reply,
       meta: JSON.stringify({
         intent: turn.data.intent,
         incomplete,

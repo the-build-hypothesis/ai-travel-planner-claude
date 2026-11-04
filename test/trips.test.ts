@@ -140,6 +140,45 @@ describe("itinerary generation & editing", () => {
     ]);
   });
 
+  it("forces outline costs into the budget currency before filling days", async () => {
+    const { env: e } = makeEnv();
+    const c = new Client(e);
+    const t = await c.post("/api/trips", {});
+    const outline = generateTurn(2);
+    outline.itinerary!.currency = "JPY";
+    for (const d of outline.itinerary!.days) {
+      d.activities = [];
+      d.estimatedDayCost = 40000;
+    }
+    mock.openaiQueue.push(okCompletion(outline));
+    const fill = (body: any) => {
+      const n = Number(String(body.messages.at(-1).content).match(/for day (\d+)/)![1]);
+      expect(body.messages[1].content).toContain("Itinerary currency: USD");
+      return okCompletion({ days: [generateTurn(2).itinerary!.days[n - 1]] })();
+    };
+    mock.openaiQueue.push(fill, fill);
+    const r = await c.post(`/api/trips/${t.json.trip.id}/messages`, { content: "2 days in Tokyo, budget $5,000" });
+    expect(r.json.trip.itinerary.currency).toBe("USD");
+    expect(r.json.trip.itinerary.days[0].activities[0].estimatedCost.currency).toBe("USD");
+    expect(r.json.trip.itinerary.totalEstimatedCost).toBe(300 + 310);
+  });
+
+  it("reports honestly when a requested modification changed nothing", async () => {
+    const { env: e } = makeEnv();
+    const c = new Client(e);
+    const trip = await newTripWithPlan(c);
+    const echo = generateTurn(3).itinerary!.days[0];
+    echo.activities = echo.activities.map((a, i) => ({ ...a, id: trip.itinerary.days[0].activities[i].id }));
+    mock.openaiQueue.push(
+      okCompletion({ reply: "I added more kid activities!", intent: "modify", tripTitle: null, preferenceUpdates: Object.fromEntries(Object.keys(generateTurn(1).preferenceUpdates).map((k) => [k, null])), itinerary: { mode: "patch", currency: null, overview: null, assumptions: null, days: [echo], removeDayNumbers: [] }, suggestions: [] }),
+    );
+    const r = await c.post(`/api/trips/${trip.id}/messages`, { content: "Add more activities for the kids" });
+    expect(r.status).toBe(200);
+    expect(r.json.reply.meta.changedDays).toEqual([]);
+    expect(r.json.reply.content).toContain("wasn't changed");
+    expect(r.json.trip.itinerary.days).toEqual(trip.itinerary.days);
+  });
+
   it("marks the plan incomplete when a day can't be filled", async () => {
     const { env: e } = makeEnv();
     const c = new Client(e);
