@@ -28,13 +28,14 @@ WHEN TO ASK vs. PLAN
 - Record anything the traveler tells you about the trip in preferenceUpdates (only changed fields; others null).
 
 BUILDING ITINERARIES (intent "generate", itinerary.mode "replace_all")
-- One entry per day (max ${MAX_DAYS} days; if more are requested, plan the first ${MAX_DAYS} and explain).
+- Return EVERY day of the trip in this single response (day 1 through the last day; max ${MAX_DAYS} days; if more are requested, plan the first ${MAX_DAYS} and explain). Never return a partial plan or promise to "continue next".
+- Keep descriptions to 1-2 sentences so the full plan fits.
 - Geographically sensible: cluster each day in one or two nearby areas, order stops to minimise backtracking, and put realistic travel time between stops in transportToNext.
 - Temporally sensible: non-overlapping startTime values (24h HH:MM), realistic durations, opening-time-friendly ordering, breaks for meals. Pace: relaxed 2-3 main activities/day, moderate 3-4, packed 5-6 (meals extra).
 - Include lunch and dinner suggestions (category "food"). Use specific, well-known, real venues where you are confident they exist; otherwise use a generic suggestion with locationName null.
 - Respect travelers' ages, interests, budget, mobility needs and other constraints. For children, include kid-appropriate options.
 - locationName must be the real place name as it would appear on a map (e.g. "Senso-ji", "teamLab Planets TOKYO"). Provide approximate lat/lng for each located activity.
-- Costs: costAmount is an ESTIMATE in the itinerary currency (use the budget currency if given, else the local currency). estimatedDayCost is the estimated total for the whole group for that day excluding lodging unless stated. Never present prices, opening hours, or availability as confirmed facts; recommend checking/booking where relevant (bookingRecommended).
+- Costs: costAmount is an ESTIMATE in the itinerary currency. If the traveler gave a budget (e.g. "$5,000" means USD), the itinerary currency MUST be the budget currency so costs are comparable to the budget; otherwise use the local currency. estimatedDayCost is the estimated total for the whole group for that day excluding lodging unless stated. Never present prices, opening hours, or availability as confirmed facts; recommend checking/booking where relevant (bookingRecommended).
 
 MODIFYING ITINERARIES (intent "modify", itinerary.mode "patch")
 - Return ONLY the days you changed, each in full (all of that day's activities). Days you do not return are kept exactly as they are.
@@ -47,7 +48,7 @@ ANSWERING QUESTIONS (intent "answer")
 - If asked to see the map: the app has an interactive map view (Map tab) showing every located activity coloured by day — tell them to use it; itinerary null.
 
 STYLE
-- reply: warm, concise (under ~140 words), summarise what you planned or changed and any key assumptions. Plain text; short "-" bullet lists allowed. No markdown headings, no JSON in reply.
+- reply: warm and concise (2-4 sentences, optionally up to 5 short "-" bullets, under ~120 words). Summarise what you planned or changed and key assumptions. The app displays the itinerary itself, so NEVER repeat activity-by-activity details, times, coordinates or costs in the reply. Plain text only: no markdown bold, headings or JSON.
 - Clearly label estimates as estimates ("approx.", "est."). Do not invent verified facts; the app separately verifies places with Google Places when available.
 - suggestions: 2-4 short follow-up requests the traveler could tap next (e.g. "Make day 2 more relaxed").
 - tripTitle: a short evocative title like "Tokyo Family Adventure" once the destination is known, otherwise null.
@@ -89,7 +90,11 @@ export function buildTripContext(prefs: TripPreferences, itinerary: Itinerary | 
         }
       : null,
   };
-  return `CURRENT TRIP STATE (authoritative; reference it when answering):\n${JSON.stringify(state)}`;
+  const currency = itinerary?.currency ?? prefs.budgetCurrency;
+  const currencyRule = currency
+    ? `\nItinerary currency: ${currency}. Express ALL costAmount and estimatedDayCost values in ${currency} and set itinerary.currency to "${currency}".`
+    : "";
+  return `CURRENT TRIP STATE (authoritative; reference it when answering):\n${JSON.stringify(state)}${currencyRule}`;
 }
 
 export interface HistoryMessage {
@@ -114,6 +119,28 @@ export function buildMessages(opts: {
   }
   msgs.push({ role: "user", content: opts.userMessage });
   return msgs;
+}
+
+/** Follow-up request used when the model returned fewer days than the trip needs. */
+export function buildContinuationMessages(opts: {
+  preferences: TripPreferences;
+  itinerary: Itinerary;
+  fromDay: number;
+  toDay: number;
+  today: string;
+}): LlmMessage[] {
+  const used = opts.itinerary.days.flatMap((d) => d.activities.map((a) => a.locationName).filter(Boolean));
+  return [
+    { role: "system", content: `${SYSTEM_PROMPT}\n\nToday's date: ${opts.today}.` },
+    { role: "system", content: buildTripContext(opts.preferences, opts.itinerary) },
+    {
+      role: "user",
+      content:
+        `Continue building this itinerary. Return ONLY days ${opts.fromDay} through ${opts.toDay} (intent "generate", itinerary.mode "patch", full detail for each of those days). ` +
+        `Make them consistent with the days already planned, vary the areas, and do not repeat venues already used (${[...new Set(used)].slice(0, 40).join("; ")}). ` +
+        `preferenceUpdates all null, tripTitle null, reply: one short sentence.`,
+    },
+  ];
 }
 
 // ───────────────────────── Merging ─────────────────────────

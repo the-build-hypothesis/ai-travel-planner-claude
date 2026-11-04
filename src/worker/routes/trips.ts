@@ -18,7 +18,7 @@ import { enforce } from "../lib/ratelimit";
 import { callStructured, LlmError } from "../llm";
 import { TURN_JSON_SCHEMA } from "../llm/turnSchema";
 import { getCachedPlace, enrichItinerary, itineraryCenter, placesConfigured, PlacesError, searchPlaces } from "../services/places";
-import { applyTurn, buildMessages, DEFAULT_TRIP_TITLE, normalizeItinerary } from "../services/planner";
+import { applyTurn, buildContinuationMessages, buildMessages, DEFAULT_TRIP_TITLE, MAX_DAYS, normalizeItinerary } from "../services/planner";
 import { ensureGuest } from "../services/sessions";
 import { attributionFor } from "../services/usage";
 
@@ -330,7 +330,49 @@ export const tripRoutes = new Hono<AppBindings>()
       throw llmToApiError(e);
     }
 
-    const merged = applyTurn({ title: row.title, preferences: prefs, itinerary }, turn.data);
+    let merged = applyTurn({ title: row.title, preferences: prefs, itinerary }, turn.data);
+
+    // Completeness check: if a (re)generated plan is missing days, request the
+    // remaining days in bounded follow-up calls rather than saving a partial plan.
+    let incomplete = false;
+    const isGeneration = turn.data.intent === "generate" || turn.data.itinerary?.mode === "replace_all";
+    const expected = Math.min(merged.preferences.durationDays ?? 0, MAX_DAYS);
+    for (let round = 0; isGeneration && merged.itinerary && merged.itineraryChanged && round < 3; round++) {
+      const have = merged.itinerary.days.length;
+      if (have >= expected) break;
+      const fromDay = have + 1;
+      const toDay = Math.min(expected, fromDay + 3);
+      try {
+        const cont = await callStructured({
+          env: c.env,
+          messages: buildContinuationMessages({ preferences: merged.preferences, itinerary: merged.itinerary, fromDay, toDay, today: new Date().toISOString().slice(0, 10) }),
+          schemaName: "planner_turn",
+          jsonSchema: TURN_JSON_SCHEMA,
+          validator: llmTurnSchema,
+          operation: "trip_plan_continue",
+          attribution,
+          maxOutputTokens: 10000,
+          timeoutMs: 90_000,
+          maxAttempts: 1,
+          temperature: 0.6,
+        });
+        const days = (cont.data.itinerary?.days ?? []).filter((d) => d.dayNumber >= fromDay && d.dayNumber <= toDay);
+        if (!days.length) {
+          incomplete = true;
+          break;
+        }
+        const next = applyTurn(
+          { title: merged.title ?? row.title, preferences: merged.preferences, itinerary: merged.itinerary },
+          { ...cont.data, intent: "modify", tripTitle: null, itinerary: { ...cont.data.itinerary!, mode: "patch", days, removeDayNumbers: [] } },
+        );
+        merged = { ...next, title: merged.title, changedDays: [...new Set([...merged.changedDays, ...next.changedDays])].sort((a, b) => a - b), itineraryChanged: true };
+      } catch {
+        incomplete = true;
+        break;
+      }
+    }
+    if (merged.itinerary && expected > merged.itinerary.days.length && isGeneration) incomplete = true;
+
     let nextItinerary = merged.itinerary;
     let verification = { lookups: 0, verified: 0, failed: 0 };
     if (nextItinerary && merged.itineraryChanged && placesConfigured(c.env)) {
@@ -359,9 +401,12 @@ export const tripRoutes = new Hono<AppBindings>()
     const assistantMsg: MessageRow = {
       id: uuid(),
       role: "assistant",
-      content: turn.data.reply,
+      content: incomplete
+        ? `${turn.data.reply}\n\nNote: I couldn't finish every day this time — ask me to "plan the remaining days" to complete the itinerary.`
+        : turn.data.reply,
       meta: JSON.stringify({
         intent: turn.data.intent,
+        incomplete,
         changedDays: merged.itineraryChanged ? merged.changedDays : [],
         suggestions: turn.data.suggestions.slice(0, 4),
         verification,
