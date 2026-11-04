@@ -2,7 +2,10 @@ import { Hono, type Context } from "hono";
 import { z } from "zod";
 import {
   itinerarySchema,
+  llmDaysSchema,
   llmTurnSchema,
+  type LlmDay,
+  type LlmTurn,
   preferencesSchema,
   type ChatMessage,
   type Itinerary,
@@ -16,9 +19,9 @@ import { ApiError, badRequest, conflict, notFound } from "../lib/errors";
 import { clientIp, parseJson } from "../lib/http";
 import { enforce } from "../lib/ratelimit";
 import { callStructured, LlmError } from "../llm";
-import { TURN_JSON_SCHEMA } from "../llm/turnSchema";
+import { DAYS_JSON_SCHEMA, TURN_JSON_SCHEMA } from "../llm/turnSchema";
 import { getCachedPlace, enrichItinerary, itineraryCenter, placesConfigured, PlacesError, searchPlaces } from "../services/places";
-import { applyTurn, buildContinuationMessages, buildMessages, DEFAULT_TRIP_TITLE, MAX_DAYS, normalizeItinerary } from "../services/planner";
+import { applyTurn, buildContinuationMessages, buildDayFillMessages, buildMessages, DEFAULT_TRIP_TITLE, MAX_DAYS, normalizeItinerary } from "../services/planner";
 import { ensureGuest } from "../services/sessions";
 import { attributionFor } from "../services/usage";
 
@@ -372,6 +375,66 @@ export const tripRoutes = new Hono<AppBindings>()
       }
     }
     if (merged.itinerary && expected > merged.itinerary.days.length && isGeneration) incomplete = true;
+
+    // Phase 2: fill outlined (empty) days with detailed activities, in parallel.
+    if (merged.itinerary && merged.itineraryChanged) {
+      const outline = merged.itinerary;
+      const emptyDays = outline.days.filter((d) => d.activities.length === 0 && merged.changedDays.includes(d.dayNumber)).map((d) => d.dayNumber);
+      if (emptyDays.length) {
+        const today = new Date().toISOString().slice(0, 10);
+        const filled: LlmDay[] = [];
+        const queue = [...emptyDays];
+        const worker = async () => {
+          while (queue.length) {
+            const dayNumber = queue.shift()!;
+            try {
+              const r = await callStructured({
+                env: c.env,
+                messages: buildDayFillMessages({ preferences: merged.preferences, itinerary: outline, dayNumber, today }),
+                schemaName: "planner_days",
+                jsonSchema: DAYS_JSON_SCHEMA,
+                validator: llmDaysSchema,
+                operation: "trip_plan_day",
+                attribution,
+                maxOutputTokens: 4000,
+                timeoutMs: 75_000,
+                maxAttempts: 2,
+                temperature: 0.6,
+              });
+              const d = r.data.days.find((x) => x.dayNumber === dayNumber) ?? (r.data.days.length === 1 ? { ...r.data.days[0], dayNumber } : null);
+              if (d && d.activities.length) filled.push(d);
+            } catch {
+              /* leave the day as an outline; reported as incomplete below */
+            }
+          }
+        };
+        await Promise.all(Array.from({ length: Math.min(5, emptyDays.length) }, worker));
+        if (filled.length) {
+          const next = applyTurn(
+            { title: merged.title ?? row.title, preferences: merged.preferences, itinerary: outline },
+            {
+              reply: turn.data.reply,
+              intent: "modify",
+              tripTitle: null,
+              preferenceUpdates: Object.fromEntries(Object.keys(turn.data.preferenceUpdates).map((k) => [k, null])) as LlmTurn["preferenceUpdates"],
+              itinerary: { mode: "patch", currency: null, overview: null, assumptions: null, days: filled, removeDayNumbers: [] },
+              suggestions: [],
+            },
+          );
+          // Keep the outline's day titles/areas (the traveler saw them in the reply).
+          for (const d of next.itinerary?.days ?? []) {
+            const o = outline.days.find((x) => x.dayNumber === d.dayNumber);
+            if (o && emptyDays.includes(d.dayNumber)) {
+              d.title = o.title || d.title;
+              d.area = o.area ?? d.area;
+              d.summary = o.summary || d.summary;
+            }
+          }
+          merged = { ...merged, itinerary: next.itinerary };
+        }
+        if (merged.itinerary?.days.some((d) => d.activities.length === 0 && emptyDays.includes(d.dayNumber))) incomplete = true;
+      }
+    }
 
     let nextItinerary = merged.itinerary;
     let verification = { lookups: 0, verified: 0, failed: 0 };

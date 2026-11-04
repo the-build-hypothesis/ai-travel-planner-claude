@@ -236,7 +236,7 @@ export async function enrichItinerary(opts: {
       if (!a.place && a.locationName && !SKIP_CATEGORIES.has(a.category) && a.coordSource !== "user") targets.push(a);
     }
   }
-  const limited = targets.slice(0, opts.maxLookups ?? 24);
+  const limited = targets.slice(0, opts.maxLookups ?? 36);
   let verified = 0;
   let failed = 0;
   const queue = [...limited];

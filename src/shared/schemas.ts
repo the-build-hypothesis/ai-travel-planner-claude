@@ -146,6 +146,8 @@ export const llmDaySchema = z.object({
 });
 export type LlmDay = z.infer<typeof llmDaySchema>;
 
+export const llmDaysSchema = z.object({ days: z.array(llmDaySchema).max(30) });
+
 export const llmPreferencesSchema = z.object({
   destination: z.string().max(200).nullable(),
   startDate: z.string().max(10).nullable(),

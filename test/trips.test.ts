@@ -108,6 +108,51 @@ describe("itinerary generation & editing", () => {
     expect(mock.openaiCalls[0].body.response_format.type).toBe("json_schema");
   });
 
+  it("fills outlined days with detailed activities via parallel per-day calls", async () => {
+    const { env: e } = makeEnv();
+    const c = new Client(e);
+    const t = await c.post("/api/trips", {});
+    const outline = generateTurn(3);
+    for (const d of outline.itinerary!.days) d.activities = [];
+    mock.openaiQueue.push(okCompletion(outline));
+    const full = generateTurn(3).itinerary!.days;
+    const fill = (body: any) => {
+      const n = Number(String(body.messages.at(-1).content).match(/for day (\d+)/)![1]);
+      const day = { ...full[n - 1], title: "model title (ignored)" };
+      return okCompletion({ days: [day] })();
+    };
+    mock.openaiQueue.push(fill, fill, fill);
+    const r = await c.post(`/api/trips/${t.json.trip.id}/messages`, { content: "3 days in Tokyo" });
+    expect(r.status).toBe(200);
+    const days = r.json.trip.itinerary.days;
+    expect(days.map((d: any) => d.activities.length)).toEqual([3, 3, 3]);
+    expect(days.map((d: any) => d.title)).toEqual(["Day 1 title", "Day 2 title", "Day 3 title"]); // outline titles kept
+    expect(days[1].activities[0].title).toBe("Museum 2");
+    expect(r.json.reply.meta.incomplete).toBe(false);
+    expect(mock.openaiCalls).toHaveLength(4);
+    expect(mock.openaiCalls[1].body.response_format.json_schema.name).toBe("planner_days");
+    const ops = await env.DB.prepare("SELECT operation, COUNT(*) AS n FROM usage_events WHERE trip_id = ? AND provider = 'openai' GROUP BY operation ORDER BY operation")
+      .bind(t.json.trip.id)
+      .all<{ operation: string; n: number }>();
+    expect(ops.results).toEqual([
+      { operation: "trip_plan", n: 1 },
+      { operation: "trip_plan_day", n: 3 },
+    ]);
+  });
+
+  it("marks the plan incomplete when a day can't be filled", async () => {
+    const { env: e } = makeEnv();
+    const c = new Client(e);
+    const t = await c.post("/api/trips", {});
+    const outline = generateTurn(2);
+    for (const d of outline.itinerary!.days) d.activities = [];
+    mock.openaiQueue.push(okCompletion(outline), errorCompletion(400), errorCompletion(400));
+    const r = await c.post(`/api/trips/${t.json.trip.id}/messages`, { content: "2 days in Tokyo" });
+    expect(r.status).toBe(200);
+    expect(r.json.reply.meta.incomplete).toBe(true);
+    expect(r.json.reply.content).toContain("plan the remaining days");
+  });
+
   it("requests missing days when the model returns a partial plan", async () => {
     const { env: e } = makeEnv();
     const c = new Client(e);

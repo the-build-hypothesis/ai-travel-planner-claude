@@ -39,6 +39,9 @@ const day = obj({
   estimatedDayCost: nnum,
 });
 
+/** Schema for per-day activity fill-in calls. */
+export const DAYS_JSON_SCHEMA: Record<string, unknown> = obj({ days: { type: "array", items: day } });
+
 const preferences = obj({
   destination: nstr,
   startDate: { ...nstr, description: "YYYY-MM-DD" },

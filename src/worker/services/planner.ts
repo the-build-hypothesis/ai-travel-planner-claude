@@ -28,8 +28,12 @@ WHEN TO ASK vs. PLAN
 - Record anything the traveler tells you about the trip in preferenceUpdates (only changed fields; others null).
 
 BUILDING ITINERARIES (intent "generate", itinerary.mode "replace_all")
-- Return EVERY day of the trip in this single response (day 1 through the last day; max ${MAX_DAYS} days; if more are requested, plan the first ${MAX_DAYS} and explain). Never return a partial plan or promise to "continue next".
-- Keep descriptions to 1-2 sentences so the full plan fits.
+- Return an OUTLINE covering EVERY day of the trip (day 1 through the last day; max ${MAX_DAYS} days; if more are requested, outline the first ${MAX_DAYS} and explain).
+- For each day give dayNumber, title, area (the one or two neighbourhoods/places that day focuses on), summary (1-2 sentences naming that day's key sights and experiences), estimatedDayCost, and "activities": [] (an EMPTY array). The app then plans each day's detailed activities from your outline, so make the summaries specific and do not repeat the same highlight on two days. In reply and suggestions, speak as if the full detailed plan is ready (the traveler sees complete days) — never offer to "add activities" or "detail each day".
+- Spread highlights sensibly: put day trips and big-ticket attractions on different days, keep arrival/departure days lighter.
+
+DETAILED ACTIVITY RULES (whenever you write activities)
+- Keep descriptions to 1-2 sentences.
 - Geographically sensible: cluster each day in one or two nearby areas, order stops to minimise backtracking, and put realistic travel time between stops in transportToNext.
 - Temporally sensible: non-overlapping startTime values (24h HH:MM), realistic durations, opening-time-friendly ordering, breaks for meals. Pace: relaxed 2-3 main activities/day, moderate 3-4, packed 5-6 (meals extra).
 - Include lunch and dinner suggestions (category "food"). Use specific, well-known, real venues where you are confident they exist; otherwise use a generic suggestion with locationName null.
@@ -121,6 +125,32 @@ export function buildMessages(opts: {
   return msgs;
 }
 
+/** Per-day request that fills in detailed activities for one outlined day. */
+export function buildDayFillMessages(opts: {
+  preferences: TripPreferences;
+  itinerary: Itinerary;
+  dayNumber: number;
+  today: string;
+}): LlmMessage[] {
+  const day = opts.itinerary.days.find((d) => d.dayNumber === opts.dayNumber)!;
+  const others = opts.itinerary.days
+    .filter((d) => d.dayNumber !== opts.dayNumber)
+    .map((d) => `Day ${d.dayNumber} (${d.area ?? ""}): ${d.title} — ${d.summary}`)
+    .join("\n");
+  return [
+    { role: "system", content: `${SYSTEM_PROMPT}\n\nToday's date: ${opts.today}.` },
+    { role: "system", content: buildTripContext(opts.preferences, opts.itinerary) },
+    {
+      role: "user",
+      content:
+        `Plan the detailed activities for day ${day.dayNumber}${day.date ? ` (${day.date})` : ""}: "${day.title}" in ${day.area ?? "the destination"}. Outline: ${day.summary}\n` +
+        `Follow the DETAILED ACTIVITY RULES (times, durations, meals, real venue names, approximate lat/lng, estimated costs, transport between stops). ` +
+        `Do not include highlights that belong to other days:\n${others}\n` +
+        `Respond with {"days": [ ... ]} containing exactly one day object for dayNumber ${day.dayNumber}.`,
+    },
+  ];
+}
+
 /** Follow-up request used when the model returned fewer days than the trip needs. */
 export function buildContinuationMessages(opts: {
   preferences: TripPreferences;
@@ -136,7 +166,7 @@ export function buildContinuationMessages(opts: {
     {
       role: "user",
       content:
-        `Continue building this itinerary. Return ONLY days ${opts.fromDay} through ${opts.toDay} (intent "generate", itinerary.mode "patch", full detail for each of those days). ` +
+        `Continue the itinerary outline. Return ONLY days ${opts.fromDay} through ${opts.toDay} (intent "generate", itinerary.mode "patch") as outlines with title, area, summary, estimatedDayCost and empty activities. ` +
         `Make them consistent with the days already planned, vary the areas, and do not repeat venues already used (${[...new Set(used)].slice(0, 40).join("; ")}). ` +
         `preferenceUpdates all null, tripTitle null, reply: one short sentence.`,
     },
