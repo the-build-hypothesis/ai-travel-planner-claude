@@ -99,6 +99,9 @@ test('register, verify by email, migrate a guest trip, recover a password', asyn
   await expect(device.getByText('That email and password combination is incorrect.')).toBeVisible();
   await device.getByLabel('Password').fill(newPassword);
   await device.getByRole('button', { name: 'Log in' }).click();
+  // This device was sent to log in from /account, so that is where it returns.
+  await expect(device.getByRole('heading', { name: 'Your account' })).toBeVisible();
+  await device.goto('/trips');
   await expect(device.getByRole('heading', { name: 'Guest migration test' })).toBeVisible();
 
   await second.close();

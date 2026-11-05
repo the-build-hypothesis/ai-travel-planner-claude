@@ -133,7 +133,7 @@ export function ChatPanel({ trip, messages, streamingText, status, busy, error, 
             rows={1}
             maxLength={2000}
             value={text}
-            placeholder={hasDays ? 'Ask for a change, like "make day 2 cheaper"…' : 'Describe your trip…'}
+            placeholder={hasDays ? 'Ask for a change…' : 'Describe your trip…'}
             onChange={(e) => {
               setText(e.target.value);
               e.target.style.height = 'auto';

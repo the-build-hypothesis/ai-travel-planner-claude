@@ -284,7 +284,7 @@ export default function WorkspacePage() {
                   <div className="absolute inset-x-0 bottom-0 p-4 text-white">
                     <p className="font-display text-2xl leading-tight font-semibold drop-shadow sm:text-3xl">{trip.destination ?? 'Destination to be decided'}</p>
                     <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-[13px] font-medium">
-                      {(trip.start_date || trip.duration_days) && <span className="flex items-center gap-1.5"><CalendarDays className="size-3.5" aria-hidden />{trip.start_date ? `${formatDate(trip.start_date)}${trip.end_date ? ` – ${formatDate(trip.end_date)}` : ''}` : `${trip.duration_days} days`}</span>}
+                      {(trip.start_date || trip.duration_days) && <span className="flex items-center gap-1.5"><CalendarDays className="size-3.5" aria-hidden />{trip.start_date ? `${formatDate(trip.start_date)}${trip.end_date ? ` – ${formatDate(trip.end_date)}` : ''}` : `${trip.duration_days} day${trip.duration_days === 1 ? '' : 's'}`}</span>}
                       {travelers > 0 && <span className="flex items-center gap-1.5"><Users className="size-3.5" aria-hidden />{travelers} traveler{travelers > 1 ? 's' : ''}</span>}
                       {trip.budget_amount != null && <span className="flex items-center gap-1.5"><Wallet className="size-3.5" aria-hidden />{money(trip.budget_amount, trip.currency)}</span>}
                     </div>

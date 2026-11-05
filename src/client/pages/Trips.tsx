@@ -85,8 +85,8 @@ export function TripsPage() {
                       {(trip.start_date || trip.duration_days) && (
                         <span className="flex items-center gap-1.5">
                           <CalendarDays className="size-3.5" aria-hidden />
-                          {trip.start_date ? formatDate(trip.start_date) : `${trip.duration_days} days`}
-                          {trip.start_date && trip.duration_days ? ` · ${trip.duration_days} days` : ''}
+                          {trip.start_date ? formatDate(trip.start_date) : `${trip.duration_days} day${trip.duration_days === 1 ? '' : 's'}`}
+                          {trip.start_date && trip.duration_days ? ` · ${trip.duration_days} day${trip.duration_days === 1 ? '' : 's'}` : ''}
                         </span>
                       )}
                       {travelers > 0 && <span className="flex items-center gap-1.5"><Users className="size-3.5" aria-hidden />{travelers}</span>}

@@ -11,6 +11,8 @@ const CATEGORY_LABELS: Record<string, string> = { sight: 'Sight', food: 'Food & 
 
 function SourceBadge({ activity }: { activity: Activity }) {
   const source = activity.location?.source;
+  // With no place attached there is nothing to verify, and nothing shows who suggested it.
+  if (!source) return null;
   if (source === 'google_places') {
     return <span className="inline-flex items-center gap-1 rounded-full bg-verified-soft px-2 py-0.5 text-[11px] font-semibold text-verified" title="Name, address and hours come from Google Places"><BadgeCheck className="size-3" aria-hidden />Verified place</span>;
   }
@@ -176,9 +178,9 @@ const ActivityRow = memo(function ActivityRow({ activity, day, index, count, tri
                     {loc.website && <a href={loc.website} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-1 font-medium text-teal hover:underline">Website <ExternalLink className="size-3" aria-hidden /></a>}
                   </p>
                 </div>
-              ) : (
+              ) : loc?.source === 'ai_estimate' ? (
                 <p className="mt-2 text-[13px] text-estimate">Hours, prices and location have not been verified. Check before you go.</p>
-              )}
+              ) : null}
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {hasCoords && <Button variant="secondary" size="sm" onClick={() => actions.showOnMap(activity.id)}><MapPin className="size-3.5" aria-hidden />Show on map</Button>}
               </div>
