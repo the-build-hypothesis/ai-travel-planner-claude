@@ -132,7 +132,8 @@ const sample = llmRows[0];
 console.log('sample LLM row:', JSON.stringify({ model: sample.model_or_endpoint, input: sample.input_tokens, cached: sample.cached_input_tokens, output: sample.output_tokens, cost: sample.estimated_cost, pricing: sample.pricing_version }));
 check('Places cost is $0.035 per Text Search', placeRows.every((r) => Math.abs(r.estimated_cost - 0.035) < 1e-12));
 if (done?.trip?.has_cover) {
-  check('viewing a photo twice bills once (edge cache)', photoRows.length === 1, `${photoRows.length} billed`);
+  // Zero is valid too: another trip may already have put the same photo in the edge cache.
+  check('viewing a photo twice bills at most once (edge cache)', photoRows.length <= 1, `${photoRows.length} billed`);
   if (photoRows[0]) check('photo uses its own SKU price', Math.abs(photoRows[0].estimated_cost - 0.007) < 1e-12);
 }
 const sum = usage.reduce((a, r) => a + (r.estimated_cost ?? 0), 0);

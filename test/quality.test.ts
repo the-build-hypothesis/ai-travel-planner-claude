@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dayWarnings, duplicateWarnings } from '../src/shared/analyze';
 import { cleanDayTitle, estimatedLocation, isPlaceholderStop, normalizeSchedule } from '../src/worker/itinerary/ops';
+import worker from '../src/worker/index';
 import { applyPlace, wantsMap } from '../src/worker/trips/planner';
 import { Client, aiActivity, eventsOf, mockExternal, plannerLlm, testEnv, turn } from './helpers';
 
@@ -60,6 +61,40 @@ describe('model output cleanup', () => {
     expect(day.title).toBe('Temples');
     expect(day.activities.map((a: any) => a.title)).toEqual(['Temple', 'Lunch']);
     expect(day.activities[1].start_time).toBe('10:10');
+  });
+});
+
+describe('daily cleanup job', () => {
+  it('removes only expired operational rows, and leaves audit and usage history alone', async () => {
+    const db = testEnv.DB;
+    const past = new Date(Date.now() - 200 * 86_400_000).toISOString();
+    const future = new Date(Date.now() + 86_400_000).toISOString();
+    const now = new Date().toISOString();
+    await db.batch([
+      db.prepare("INSERT INTO users (id, email, email_normalized, password_hash, created_at, updated_at) VALUES ('usr_clean', 'clean@example.test', 'clean@example.test', 'x', ?1, ?1)").bind(now),
+      db.prepare("INSERT INTO sessions (id, token_hash, user_id, created_at, last_seen_at, expires_at, absolute_expires_at) VALUES ('ses_old', 'h1', 'usr_clean', ?1, ?1, ?1, ?1)").bind(past),
+      db.prepare("INSERT INTO sessions (id, token_hash, user_id, created_at, last_seen_at, expires_at, absolute_expires_at) VALUES ('ses_new', 'h2', 'usr_clean', ?1, ?1, ?2, ?2)").bind(now, future),
+      db.prepare("INSERT INTO auth_tokens (id, token_hash, user_id, purpose, created_at, expires_at) VALUES ('tok_old', 'h3', 'usr_clean', 'verify_email', ?1, ?1)").bind(past),
+      db.prepare("INSERT INTO auth_tokens (id, token_hash, user_id, purpose, created_at, expires_at) VALUES ('tok_new', 'h4', 'usr_clean', 'verify_email', ?1, ?2)").bind(now, future),
+      db.prepare("INSERT INTO rate_limits (key, window_start, count) VALUES ('clean:old', ?1, 1)").bind(Date.now() - 3 * 86_400_000),
+      db.prepare("INSERT INTO rate_limits (key, window_start, count) VALUES ('clean:new', ?1, 1)").bind(Date.now()),
+      db.prepare("INSERT INTO place_cache (cache_key, result, fetched_at) VALUES ('clean-old', '[]', ?1)").bind(past),
+      db.prepare("INSERT INTO usage_records (id, created_at, kind, provider, model_or_endpoint, operation, status) VALUES ('use_clean', ?1, 'llm', 'openai', 'm', 'old', 'success')").bind(past),
+      db.prepare("INSERT INTO audit_log (created_at, action, outcome) VALUES (?1, 'clean.test', 'success')").bind(past),
+    ]);
+
+    await worker.scheduled({} as ScheduledController, testEnv);
+
+    const exists = async (sql: string) => (await db.prepare(sql).first()) !== null;
+    expect(await exists("SELECT 1 FROM sessions WHERE id = 'ses_old'")).toBe(false);
+    expect(await exists("SELECT 1 FROM sessions WHERE id = 'ses_new'")).toBe(true);
+    expect(await exists("SELECT 1 FROM auth_tokens WHERE id = 'tok_old'")).toBe(false);
+    expect(await exists("SELECT 1 FROM auth_tokens WHERE id = 'tok_new'")).toBe(true);
+    expect(await exists("SELECT 1 FROM rate_limits WHERE key = 'clean:old'")).toBe(false);
+    expect(await exists("SELECT 1 FROM rate_limits WHERE key = 'clean:new'")).toBe(true);
+    expect(await exists("SELECT 1 FROM place_cache WHERE cache_key = 'clean-old'")).toBe(false);
+    expect(await exists("SELECT 1 FROM usage_records WHERE id = 'use_clean'")).toBe(true);
+    expect(await exists("SELECT 1 FROM audit_log WHERE action = 'clean.test'")).toBe(true);
   });
 });
 

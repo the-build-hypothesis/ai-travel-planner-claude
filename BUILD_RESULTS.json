@@ -1,0 +1,750 @@
+{
+  "schemaVersion": 1,
+  "specVersion": "1.7",
+  "project": "AI Travel Planner",
+  "generatedAt": "2026-11-05T23:53:45Z",
+  "execution": {
+    "startedAt": "2026-11-05T22:28:20Z",
+    "endedAt": "2026-11-05T23:53:45Z",
+    "elapsedSeconds": 5125,
+    "limitSeconds": 28800,
+    "completionReason": "completed",
+    "humanInterventions": [],
+    "note": "endedAt is when this report was generated. Committing it and verifying its build happened after that."
+  },
+  "repository": {
+    "branch": "main",
+    "commit": "b82d7cf5cbd33bed6f7773107eabc673a9c6b3dc",
+    "note": "The last application code commit. The commit containing this file adds only documentation, so it cannot name its own SHA."
+  },
+  "deployment": {
+    "status": "deployed",
+    "publicUrl": "https://ai-travel-planner-v1-claude.thebuildhypothesis.com",
+    "githubBuildsVerification": "verified",
+    "deployedCommit": "b82d7cf5cbd33bed6f7773107eabc673a9c6b3dc",
+    "buildId": "f054a599-5c68-42f1-825a-fe50ffeedfed",
+    "evidence": "/api/health reported this commit with source workers-builds; build outcome success from the Cloudflare Builds API."
+  },
+  "requirements": [
+    {
+      "ref": "2.1",
+      "description": "Natural-language requests, context, clarifying questions",
+      "status": "Verified",
+      "evidence": "[prod] guest and tools journeys; [mocked] trips.test.ts conversation suite"
+    },
+    {
+      "ref": "2.1",
+      "description": "Modifies plans and preserves unrelated details",
+      "status": "Verified",
+      "evidence": "[prod] guest journey asserts day 1 unchanged after a chat edit; [mocked] exact equality checks on untouched activities and days"
+    },
+    {
+      "ref": "2.1",
+      "description": "Distinguishes verified information from estimates",
+      "status": "Verified",
+      "evidence": "[prod] stops badged Verified place or AI suggestion, costs labeled est.; [mocked] quality.test.ts"
+    },
+    {
+      "ref": "2.1",
+      "description": "Conversation history available on reopen",
+      "status": "Verified",
+      "evidence": "[prod] guest journey reopens trip and sees the conversation"
+    },
+    {
+      "ref": "2.2",
+      "description": "Create, view, edit, save and reopen trips",
+      "status": "Verified",
+      "evidence": "[prod] guest and tools journeys"
+    },
+    {
+      "ref": "2.2",
+      "description": "Trip fields, including incomplete requests",
+      "status": "Verified",
+      "evidence": "[prod] details form saved and invalid dates refused; [mocked] 10 validation cases"
+    },
+    {
+      "ref": "2.3",
+      "description": "Structured day-by-day itineraries with dedicated UI",
+      "status": "Verified",
+      "evidence": "[prod] journeys assert day sections and stops; schema validated before saving"
+    },
+    {
+      "ref": "2.3",
+      "description": "Geographically and temporally practical schedules",
+      "status": "Partial",
+      "evidence": "[mocked] overlap normalization and warnings. Quality depends on the model: gpt-4o-mini grouped days sensibly in observed runs, but its coordinates can be tens of km off, and this was not assessed systematically"
+    },
+    {
+      "ref": "2.4",
+      "description": "Add, remove, replace and rearrange activities",
+      "status": "Verified",
+      "evidence": "[prod] add, edit, remove with undo, arrow and adjacent drag reorder, chat replace. Long-distance drag needing auto-scroll did not pass automation (see issues)"
+    },
+    {
+      "ref": "2.4",
+      "description": "Change preferences and regenerate selected portions",
+      "status": "Verified",
+      "evidence": "[prod] details form and Regenerate day, other day unchanged"
+    },
+    {
+      "ref": "2.5",
+      "description": "Real-world place research with hours and ratings",
+      "status": "Verified",
+      "evidence": "[prod] chat research cards, Explore tab and Explore page, using Google Places"
+    },
+    {
+      "ref": "2.5",
+      "description": "No fabricated details presented as verified",
+      "status": "Verified",
+      "evidence": "[mocked] hours only from Places, renamed places lose verified data, closed places flagged. [local] a real closed branch was flagged from live Places data"
+    },
+    {
+      "ref": "2.6",
+      "description": "Interactive map of destinations and itinerary locations",
+      "status": "Verified",
+      "evidence": "[prod] tiles and pins load on desktop and mobile; screenshots reviewed"
+    },
+    {
+      "ref": "2.6",
+      "description": "Locations identified by day",
+      "status": "Verified",
+      "evidence": "[prod] pins numbered and colored by day, reviewed in screenshots. The day filter buttons render but automation did not click them"
+    },
+    {
+      "ref": "2.7",
+      "description": "Polished, responsive UI",
+      "status": "Verified",
+      "evidence": "[prod] screenshots reviewed at 1440px and 390px; no horizontal overflow asserted on mobile"
+    },
+    {
+      "ref": "2.7",
+      "description": "Loading indicators, empty states and clear errors",
+      "status": "Verified",
+      "evidence": "[prod] skeleton days and status lines observed; empty states and field errors asserted"
+    },
+    {
+      "ref": "2.7",
+      "description": "Accessible controls",
+      "status": "Implemented but Unverified",
+      "evidence": "Labels, focus styles, native dialogs and chart data tables implemented. No screen-reader test or automated accessibility audit was run"
+    },
+    {
+      "ref": "3.1",
+      "description": "Guests can create, generate, modify and continue",
+      "status": "Verified",
+      "evidence": "[prod] guest journey with no account"
+    },
+    {
+      "ref": "3.1",
+      "description": "Server-side guest data with an unguessable identifier",
+      "status": "Verified",
+      "evidence": "[prod] HttpOnly cookie attributes; [mocked] token is long and only its hash is stored"
+    },
+    {
+      "ref": "3.2",
+      "description": "Registration with validation and unique case-insensitive email",
+      "status": "Verified",
+      "evidence": "[prod] registration; [mocked] validation and case-insensitivity"
+    },
+    {
+      "ref": "3.2",
+      "description": "Secure password hashing, never stored in plaintext",
+      "status": "Verified",
+      "evidence": "[mocked] scrypt format, salts and no plaintext in rows; [prod] login works with scrypt on Workers"
+    },
+    {
+      "ref": "3.2",
+      "description": "Email verification supported",
+      "status": "Verified",
+      "evidence": "[prod] real email received at a disposable inbox and its link confirmed the account"
+    },
+    {
+      "ref": "3.2",
+      "description": "Guest trips retained after registering",
+      "status": "Verified",
+      "evidence": "[prod] account journey"
+    },
+    {
+      "ref": "3.3",
+      "description": "Login, logout and persistent sessions",
+      "status": "Verified",
+      "evidence": "[prod] login across browser contexts; [mocked] server-side invalidation on logout"
+    },
+    {
+      "ref": "3.3",
+      "description": "Session expiration",
+      "status": "Verified",
+      "evidence": "[mocked] idle and absolute expiry, with timestamps set in the database. Not waited out in production"
+    },
+    {
+      "ref": "3.3",
+      "description": "Rate limiting and attack protection",
+      "status": "Verified",
+      "evidence": "[mocked] login, reset and registration limits, identical errors for unknown accounts. Admin login lockout also observed locally"
+    },
+    {
+      "ref": "3.3",
+      "description": "HTTP-only cookies, no tokens in local storage",
+      "status": "Verified",
+      "evidence": "[prod] guest cookie attributes; [mocked] user and admin cookies. Client code uses no web storage"
+    },
+    {
+      "ref": "3.4",
+      "description": "Saved trips, reopening and cross-device access",
+      "status": "Verified",
+      "evidence": "[prod] second browser context logs in and sees the trip"
+    },
+    {
+      "ref": "3.4",
+      "description": "Update basic account information",
+      "status": "Verified",
+      "evidence": "[prod] name saved in account journey; [mocked] currency. Email address cannot be changed (see limitations)"
+    },
+    {
+      "ref": "3.4",
+      "description": "Change password",
+      "status": "Verified",
+      "evidence": "[mocked] change ends other sessions. Not exercised in a production browser"
+    },
+    {
+      "ref": "3.4",
+      "description": "Server-side authorization of owned resources",
+      "status": "Verified",
+      "evidence": "[mocked] 10 operations return 404 for another user; [prod] same for another guest"
+    },
+    {
+      "ref": "3.5",
+      "description": "Guest-to-account migration without claims or duplicates",
+      "status": "Verified",
+      "evidence": "[prod] migration on login; [mocked] idempotence, other guests protected, merge into an existing account"
+    },
+    {
+      "ref": "4.1",
+      "description": "Cloudflare Email Service binding, sender from EMAIL_FROM",
+      "status": "Verified",
+      "evidence": "[prod] real delivery; EMAIL binding confirmed through the API; sender read from the runtime variable"
+    },
+    {
+      "ref": "4.2",
+      "description": "Verification tokens: secure, hashed, expiring, single use",
+      "status": "Verified",
+      "evidence": "[prod] real link used; [mocked] hash-only storage, expiry and reuse refused"
+    },
+    {
+      "ref": "4.2",
+      "description": "Resend with rate limiting",
+      "status": "Verified",
+      "evidence": "[mocked] replaces the old link, uniform response, limit enforced"
+    },
+    {
+      "ref": "4.3",
+      "description": "Forgot Password link and full reset workflow",
+      "status": "Verified",
+      "evidence": "[prod] real email, link, new password; old password refused, new accepted"
+    },
+    {
+      "ref": "4.3",
+      "description": "Reset expiry, single use, sessions ended, no enumeration, rate limit",
+      "status": "Verified",
+      "evidence": "[prod] link reuse refused and other device logged out; [mocked] 30-minute expiry, identical responses, limit"
+    },
+    {
+      "ref": "4.4",
+      "description": "Delivery failures handled honestly",
+      "status": "Verified",
+      "evidence": "[mocked] thrown failure and missing binding. No real delivery failure occurred to observe"
+    },
+    {
+      "ref": "5",
+      "description": "Separate admin interface and identity",
+      "status": "Verified",
+      "evidence": "[prod] guest session refused; [mocked] cookies not interchangeable, user credentials refused"
+    },
+    {
+      "ref": "5.1",
+      "description": "Admin auth: hashing, cookies, rate limit, server-side checks, expiry",
+      "status": "Verified",
+      "evidence": "[prod] unauthenticated and guest requests refused; [mocked] Strict cookie, expiry, logout, lockout"
+    },
+    {
+      "ref": "5.2",
+      "description": "Bootstrap account with forced password change",
+      "status": "Verified",
+      "evidence": "[prod] activate-admin.mjs: 7 routes blocked, change succeeded, old password refused. [local] same flow through the browser UI"
+    },
+    {
+      "ref": "5.2",
+      "description": "Not recreated after deletion; last admin protected; credentials not in UI",
+      "status": "Verified",
+      "evidence": "[mocked] deletion and guard in the SQL write; [prod] page and bundle checked for default credentials"
+    },
+    {
+      "ref": "5.3",
+      "description": "Create, reset, disable, delete and view administrators",
+      "status": "Verified",
+      "evidence": "[prod] admin-manage journey through the UI, with typed confirmation"
+    },
+    {
+      "ref": "5.4",
+      "description": "User list, search, detail, disable and re-enable",
+      "status": "Verified",
+      "evidence": "[prod] admin-manage journey; disabled user logged out and refused"
+    },
+    {
+      "ref": "5.4",
+      "description": "Protected user deletion, with documented effects",
+      "status": "Verified",
+      "evidence": "[prod] typed confirmation, then login refused; [mocked] trips cascade and usage retained; README describes it"
+    },
+    {
+      "ref": "5.5",
+      "description": "Trip list, sort, filter, search, guest trips and pagination",
+      "status": "Verified",
+      "evidence": "[prod] newest-first and guest filter asserted; [mocked] search, user filter, sort and paging"
+    },
+    {
+      "ref": "5.5",
+      "description": "Inspect itinerary, timestamps, usage and cost per trip",
+      "status": "Verified",
+      "evidence": "[prod] trip detail API used to validate usage; audit entry confirmed"
+    },
+    {
+      "ref": "6.1",
+      "description": "Overview metrics, lifetime separate from period",
+      "status": "Verified",
+      "evidence": "[prod] lifetime figures unchanged across ranges; [mocked] exact totals"
+    },
+    {
+      "ref": "6.2",
+      "description": "Shared reporting period with all presets and custom range, UTC",
+      "status": "Verified",
+      "evidence": "[prod] all 7 presets and a custom range exercised in the UI; [mocked] boundaries"
+    },
+    {
+      "ref": "6.3",
+      "description": "User metrics and detail view",
+      "status": "Verified",
+      "evidence": "[prod] lists and detail; [mocked] date filter applied to costs, sorting by cost"
+    },
+    {
+      "ref": "6.4",
+      "description": "Trip metrics, newest first",
+      "status": "Verified",
+      "evidence": "[prod] order asserted; [mocked] per-trip costs respect the range"
+    },
+    {
+      "ref": "6.5",
+      "description": "Request-level usage records, no credentials stored",
+      "status": "Verified",
+      "evidence": "[prod] records inspected field by field; [mocked] scrubbing of keys from error text"
+    },
+    {
+      "ref": "6.6",
+      "description": "LLM cost tracking",
+      "status": "Verified",
+      "evidence": "[prod] real tokens, costs matched a hand calculation to within 1e-12; [mocked] cached pricing, unknown cost for unpriced models, history kept"
+    },
+    {
+      "ref": "6.7",
+      "description": "Google Places cost tracking by SKU",
+      "status": "Verified",
+      "evidence": "[prod] $0.035 search and $0.007 photo; repeat photo not billed; [mocked] outside-trip usage"
+    },
+    {
+      "ref": "6.8",
+      "description": "Estimates labeled, explainable, unattributed usage accounted for",
+      "status": "Verified",
+      "evidence": "[prod] notes visible, parts add up to total; pricing snapshot per record"
+    },
+    {
+      "ref": "6.9",
+      "description": "Monitoring visualizations",
+      "status": "Verified",
+      "evidence": "[prod] charts rendered and reviewed in screenshots; series data asserted"
+    },
+    {
+      "ref": "6.10",
+      "description": "Operational monitoring",
+      "status": "Verified",
+      "evidence": "[prod] latency and request volume returned. Failed requests and errors [mocked] only, because production had none"
+    },
+    {
+      "ref": "7",
+      "description": "Audit logging, not editable",
+      "status": "Verified",
+      "evidence": "[prod] login, management and trip access entries seen; [mocked] triggers refuse UPDATE and DELETE, no secrets in rows"
+    },
+    {
+      "ref": "8.1",
+      "description": "Runtime provider and model, no hardcoding or substitution",
+      "status": "Verified",
+      "evidence": "[prod] openai / gpt-4o-mini reported from runtime config; [mocked] missing values fail, no fallback"
+    },
+    {
+      "ref": "8.2",
+      "description": "Provider abstraction",
+      "status": "Verified",
+      "evidence": "[mocked] adapter and contract; only OpenAI implemented, as the spec allows"
+    },
+    {
+      "ref": "8.3",
+      "description": "Structured output validated before saving",
+      "status": "Verified",
+      "evidence": "[prod] OpenAI accepted strict schemas; [mocked] malformed output retried and never saved"
+    },
+    {
+      "ref": "8.4",
+      "description": "Timeouts, bounded retries, rate-limit handling, clear errors",
+      "status": "Verified",
+      "evidence": "[mocked] each failure class. No real provider failure occurred to observe"
+    },
+    {
+      "ref": "9",
+      "description": "Cloudflare-only hosting and persistence",
+      "status": "Verified",
+      "evidence": "Worker, D1 and Assets confirmed through the API; external services are AI, Places and map tiles only"
+    },
+    {
+      "ref": "9.1",
+      "description": "Existing Worker used, prefixed resources, reproducible config",
+      "status": "Verified",
+      "evidence": "Worker reused; D1 named with the prefix; wrangler.jsonc and migrations in the repository"
+    },
+    {
+      "ref": "9.2",
+      "description": "Email binding, templates and sending",
+      "status": "Verified",
+      "evidence": "[prod] verification and reset emails delivered"
+    },
+    {
+      "ref": "10.1",
+      "description": "Secrets untouched, administrator configuration preserved",
+      "status": "Verified",
+      "evidence": "Bindings read before and after deploys; no wrangler secret commands run; secret scan clean"
+    },
+    {
+      "ref": "11",
+      "description": "GitHub-connected deployment verified",
+      "status": "Verified",
+      "evidence": "Workers Builds success with health reporting b82d7cf and source workers-builds"
+    },
+    {
+      "ref": "12",
+      "description": "Public URL, root serving, HTTPS, redirects and routes",
+      "status": "Verified",
+      "evidence": "[prod] verify-prod.mjs: redirect, HSTS, deep links, API 404; no hostnames in source"
+    },
+    {
+      "ref": "13",
+      "description": "CSRF, injection and safe error handling",
+      "status": "Verified",
+      "evidence": "[prod] cross-origin POST refused; [mocked] SQL metacharacters, sort allowlist, LIKE escaping, body limits, safe messages"
+    },
+    {
+      "ref": "13.1",
+      "description": "API cost abuse protection",
+      "status": "Verified",
+      "evidence": "[mocked] per-owner, per-address and daily limits, global cost cap, Places quota, output bounds. Limits not load tested in production"
+    },
+    {
+      "ref": "13.2",
+      "description": "Administrative security",
+      "status": "Verified",
+      "evidence": "[prod] server-side refusal; destructive actions confirmed by typing"
+    },
+    {
+      "ref": "14.1-14.4",
+      "description": "Automated application, auth, usage and provider tests",
+      "status": "Verified",
+      "evidence": "npm test: 236 passed"
+    },
+    {
+      "ref": "14.5",
+      "description": "Production verification walkthrough",
+      "status": "Verified",
+      "evidence": "All 20 steps executed. See section 5 of the report"
+    }
+  ],
+  "checks": [
+    {
+      "name": "Unit and integration tests",
+      "command": "npm test (vitest run)",
+      "environment": "workerd with real D1, external APIs mocked",
+      "result": "passed",
+      "counts": {
+        "passed": 236,
+        "failed": 0,
+        "skipped": 0
+      },
+      "evidence": "6 test files"
+    },
+    {
+      "name": "Type check",
+      "command": "npm run typecheck",
+      "environment": "local",
+      "result": "passed",
+      "counts": null,
+      "evidence": "no errors"
+    },
+    {
+      "name": "Client build",
+      "command": "npm run build",
+      "environment": "local and Workers Builds",
+      "result": "passed",
+      "counts": null,
+      "evidence": "vite build; local and CI"
+    },
+    {
+      "name": "Browser journeys",
+      "command": "E2E_BASE_URL=<APP_PUBLIC_URL> npx playwright test",
+      "environment": "production, real OpenAI, Places and Email",
+      "result": "passed",
+      "counts": {
+        "passed": 9,
+        "failed": 0,
+        "skipped": 1
+      },
+      "evidence": "Run on b82d7cf. The skipped test is the forced-change browser test, which only runs on a fresh local database"
+    },
+    {
+      "name": "Forced admin password change in browser",
+      "command": "npx playwright test e2e/admin.spec.ts",
+      "environment": "local wrangler dev, real browser",
+      "result": "passed",
+      "counts": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      },
+      "evidence": "Passed earlier in the session; production bootstrap was already activated through the API script"
+    },
+    {
+      "name": "Production bootstrap activation",
+      "command": "node scripts/activate-admin.mjs <APP_PUBLIC_URL>",
+      "environment": "production",
+      "result": "passed",
+      "counts": {
+        "passed": 13,
+        "failed": 0,
+        "skipped": 0
+      },
+      "evidence": "Run once, on 52634c8, and cannot be repeated"
+    },
+    {
+      "name": "Production checks",
+      "command": "node scripts/verify-prod.mjs <APP_PUBLIC_URL>",
+      "environment": "production, real services",
+      "result": "passed",
+      "counts": null,
+      "evidence": "All checks passed on the final code"
+    },
+    {
+      "name": "Dependency audit",
+      "command": "npm audit --omit=dev",
+      "environment": "local",
+      "result": "passed",
+      "counts": null,
+      "evidence": "0 vulnerabilities"
+    },
+    {
+      "name": "Secret scan",
+      "command": "git grep for key-shaped strings",
+      "environment": "repository",
+      "result": "passed",
+      "counts": null,
+      "evidence": "no matches"
+    },
+    {
+      "name": "Workers Builds",
+      "command": "scripts/wait-build.mjs",
+      "environment": "Cloudflare",
+      "result": "passed",
+      "counts": null,
+      "evidence": "build f054a599-5c68-42f1-825a-fe50ffeedfed succeeded for b82d7cf"
+    },
+    {
+      "name": "Accessibility audit",
+      "command": "none",
+      "environment": "none",
+      "result": "skipped",
+      "counts": null,
+      "evidence": "No automated audit or screen-reader test was run"
+    }
+  ],
+  "integrations": {
+    "llm": {
+      "provider": "openai",
+      "model": "gpt-4o-mini",
+      "status": "verified",
+      "evidence": "Real calls in production; model read from runtime configuration."
+    },
+    "googlePlaces": {
+      "status": "verified",
+      "evidence": "Real Text Search and Place Photos calls in production."
+    },
+    "maps": {
+      "status": "verified",
+      "provider": "Leaflet with OpenStreetMap tiles",
+      "evidence": "Tiles and pins observed in production. Google Maps is not used for display."
+    },
+    "cloudflareEmailService": {
+      "status": "verified",
+      "evidence": "Real verification and reset emails received at a disposable inbox from production."
+    }
+  },
+  "infrastructure": {
+    "resources": [
+      {
+        "name": "ai-travel-planner-claude",
+        "type": "Cloudflare Worker",
+        "action": "modified (existing; code, D1 binding and cron trigger)"
+      },
+      {
+        "name": "bh-travel-v1-claude-claude-db",
+        "type": "D1 database",
+        "id": "79aa89be-91d5-493f-b115-43bfce80c764",
+        "action": "created"
+      },
+      {
+        "name": "ai-travel-planner-v1-claude.thebuildhypothesis.com",
+        "type": "Custom domain",
+        "action": "existing association kept"
+      }
+    ],
+    "migrations": {
+      "applied": [
+        "0001_init.sql"
+      ],
+      "status": "applied to production"
+    },
+    "secretsModified": false
+  },
+  "issues": [
+    {
+      "severity": "Medium",
+      "title": "Google Places content on a non-Google map",
+      "description": "Google's terms restrict displaying Places content on non-Google maps. Verified coordinates are shown on OpenStreetMap, because the only Google key is a server-side secret that must not reach the browser.",
+      "impact": "Possible terms issue for commercial use. No user-visible defect.",
+      "followUp": "Get a browser-restricted Maps JavaScript key and use Google Maps, or use a non-Google geocoder for pins. Review the terms."
+    },
+    {
+      "severity": "Medium",
+      "title": "Places dominates API cost",
+      "description": "Each verified stop is a $0.035 lookup, against about $0.0005 per LLM call. Measured: $4.91 of $4.94 in production. A 5-day plan with 25 uncached stops is about $0.88.",
+      "impact": "Spend grows quickly with traffic. The $25 daily cap would be reached at roughly 28 such plans, after which AI requests pause for everyone.",
+      "followUp": "Verify lazily when a stop is opened, or request a cheaper field mask without hours and ratings. Tune the cap before launch."
+    },
+    {
+      "severity": "Medium",
+      "title": "Bootstrap window on a fresh deployment",
+      "description": "Until the password is changed, anyone who knows the documented default could complete the forced change first. This is inherent to the required admin/admin bootstrap.",
+      "impact": "On this deployment, closed within minutes of first going live. Applies again to any new database.",
+      "followUp": "Run scripts/activate-admin.mjs as part of provisioning."
+    },
+    {
+      "severity": "Low",
+      "title": "Long-distance drag not confirmed",
+      "description": "Dragging a stop from the bottom to the top of a long day did not reorder under Playwright, which may be a limit of its synthetic drag rather than the app. Adjacent drag passes. Touch drag is not implemented.",
+      "impact": "Arrow buttons and the Day field in Edit work on all devices.",
+      "followUp": "Test by hand, and add an accessible reorder library if it reproduces."
+    },
+    {
+      "severity": "Low",
+      "title": "Model output quality varies",
+      "description": "gpt-4o-mini sometimes writes pseudo-stops such as \"Travel to Ryoan-ji\", overly optimistic costs, or coordinates tens of km off. Unmatched stops keep those coordinates, shown as dashed approximate pins.",
+      "impact": "Occasional awkward stops. All are labeled and editable.",
+      "followUp": "Filter transport stops, or try a stronger model through LLM_MODEL (add a rate in Settings)."
+    },
+    {
+      "severity": "Low",
+      "title": "Google place types can look odd",
+      "description": "Google labeled tofu restaurants in Kyoto as \"Korean Restaurant\" in one result. The label is shown as Google returned it.",
+      "impact": "Cosmetic.",
+      "followUp": "Hide the type label on cards if this proves common."
+    },
+    {
+      "severity": "Low",
+      "title": "Email address cannot be changed",
+      "description": "Account settings cover name, default currency and password.",
+      "impact": "Users must contact support, and no support route exists.",
+      "followUp": "Add a re-verified email change flow."
+    },
+    {
+      "severity": "Low",
+      "title": "Disconnect during generation",
+      "description": "If the browser disconnects, the Worker has only a short grace period to finish. Completed days of a first build are saved. The trip lock clears on completion or within 3 minutes.",
+      "impact": "A rare lost reply, and possibly a brief \"still working\" state.",
+      "followUp": "Move generation to a Cloudflare Workflow or Durable Object."
+    },
+    {
+      "severity": "Low",
+      "title": "Fixed-window rate limits",
+      "description": "Counters reset on window boundaries, so a burst across a boundary can reach about twice a limit. The cost cap is checked when a request starts, so it can overshoot slightly.",
+      "impact": "Small overspend at worst.",
+      "followUp": "Use sliding windows if abuse appears."
+    },
+    {
+      "severity": "Low",
+      "title": "Admin login limit counts successes",
+      "description": "Five login attempts per 15 minutes per address and username includes successful ones. This was hit during testing.",
+      "impact": "An administrator logging in repeatedly can wait up to 15 minutes.",
+      "followUp": "Count only failures if this is a nuisance."
+    },
+    {
+      "severity": "Low",
+      "title": "OpenStreetMap public tiles",
+      "description": "The public tile servers are not intended for heavy use.",
+      "impact": "Tiles could be throttled under real traffic.",
+      "followUp": "Switch to a commercial tile provider."
+    },
+    {
+      "severity": "Low",
+      "title": "Test data in production",
+      "description": "Verification left guest trips and test accounts in production, which appear in the dashboard and cost totals. Test accounts use disposable inbox addresses.",
+      "impact": "Totals include about $4.94 of test usage.",
+      "followUp": "Delete them under Users, or clear the tables before launch."
+    },
+    {
+      "severity": "Info",
+      "title": "CJK glyphs in test screenshots",
+      "description": "Headless Chromium on this machine has no CJK fonts, so some Japanese address text appeared as boxes. Real devices should fall back to system fonts, but this was not checked.",
+      "impact": "Expected to affect only this test environment.",
+      "followUp": "Check on a real device."
+    }
+  ],
+  "costs": {
+    "currency": "USD",
+    "productionUsage": {
+      "source": "usage_records in production D1, near the end of verification",
+      "llmRequests": 67,
+      "inputTokens": 75017,
+      "outputTokens": 34581,
+      "llmEstimatedCost": 0.03042,
+      "placesBillableRequests": 146,
+      "placesEstimatedCost": 4.914,
+      "note": "Requests and tokens are measured. Costs are calculated from list prices, not invoices."
+    },
+    "localTestingUsage": {
+      "source": "usage_records in local D1, real API calls from wrangler dev",
+      "llmEstimatedCost": 0.00864,
+      "placesEstimatedCost": 1.337
+    },
+    "providerBilledAmount": null,
+    "emailCost": null,
+    "cloudflareCost": null,
+    "agentBuildCost": null,
+    "agentBuildTokens": null
+  },
+  "summary": {
+    "requirementCounts": {
+      "Verified": 71,
+      "Implemented but Unverified": 1,
+      "Partial": 1,
+      "Failed": 0,
+      "Not Started": 0,
+      "Blocked": 0
+    },
+    "totalRequirements": 73,
+    "outcome": "Complete and deployed. 73 tracked requirements: 71 verified, 1 partial, 1 implemented but unverified, none failed, not started or blocked. The app is usable in production at https://ai-travel-planner-v1-claude.thebuildhypothesis.com."
+  }
+}
