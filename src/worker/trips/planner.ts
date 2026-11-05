@@ -474,6 +474,12 @@ export async function runTurn(ctx: TurnContext, initial: TripRow, userText: stri
     });
 
     const before = { destination: row.destination };
+    // Too long a trip is planned at the maximum and the traveler is told, not silently cut to a default.
+    let lengthNote: string | null = null;
+    if (typeof turn.trip_updates.duration_days === 'number' && turn.trip_updates.duration_days > MAX_TRIP_DAYS) {
+      lengthNote = `Trips can be at most ${MAX_TRIP_DAYS} days, so this plan covers the first ${MAX_TRIP_DAYS}.`;
+      turn.trip_updates.duration_days = MAX_TRIP_DAYS;
+    }
     const patch = sanitizeTripUpdates(turn.trip_updates);
     if (Object.keys(patch).length) {
       row = await applyTripPatch(ctx.env.DB, row, patch);
@@ -533,6 +539,7 @@ export async function runTurn(ctx: TurnContext, initial: TripRow, userText: stri
     if (turn.show_map) ctx.emit({ type: 'show_map' });
 
     const notes = [...failures];
+    if (lengthNote) notes.push(lengthNote);
     if (researchNote) notes.push(researchNote);
     if (failedDays.length) notes.push(`Day${failedDays.length > 1 ? 's' : ''} ${failedDays.join(', ')} could not be generated. Use Regenerate on ${failedDays.length > 1 ? 'those days' : 'that day'}.`);
     const message = await addMessage(ctx.env.DB, row.id, 'assistant', turn.reply.trim() || 'Done.', {

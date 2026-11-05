@@ -62,6 +62,21 @@ describe('model output cleanup', () => {
   });
 });
 
+describe('trip length limit', () => {
+  it('plans the maximum for a too-long request and says so', async () => {
+    const client = new Client();
+    const trip = (await client.json('POST', '/api/trips', {})).data.trip;
+    const generate = turn({ intent: 'generate', reply: 'Ok', trip_updates: { ...(turn().trip_updates as object), destination: 'Tokyo', duration_days: 21 } });
+    const calls = mockExternal(plannerLlm({ turn: generate, days: 14 }));
+    const events = await client.sse(`/api/trips/${trip.id}/messages`, { content: 'Three weeks in Japan' });
+    const done = eventsOf(events, 'done')[0];
+    expect(done.trip.duration_days).toBe(14);
+    expect(done.trip.itinerary.days).toHaveLength(14);
+    expect(done.message.meta.notes.join(' ')).toMatch(/at most 14 days/);
+    expect(calls.llm.find((c) => c.response_format.json_schema.name === 'itinerary_outline').messages[0].content).toContain('exactly 14 days');
+  });
+});
+
 describe('permanently closed places', () => {
   const closedPlaces = () => ({ places: [{ id: 'closed-1', displayName: { text: 'Shut Attraction' }, location: { latitude: 35.68, longitude: 139.76 }, businessStatus: 'CLOSED_PERMANENTLY' }] });
 

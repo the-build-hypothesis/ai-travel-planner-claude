@@ -234,10 +234,10 @@ const SCENES = [
   ['#fbe3a8', '#f2b463', '#d9743f', '#7d3c32'],
 ];
 
-export function SceneArt({ seed, className = '' }: { seed: string; className?: string }) {
+export function SceneArt({ seed, scene, className = '' }: { seed: string; scene?: number; className?: string }) {
   let hash = 0;
   for (const ch of seed) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
-  const [sky, far, mid, near] = SCENES[hash % SCENES.length];
+  const [sky, far, mid, near] = SCENES[(scene ?? hash) % SCENES.length];
   const sunX = 60 + (hash % 280);
   const gradId = `sky-${hash}`;
   return (

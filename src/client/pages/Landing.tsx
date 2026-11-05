@@ -12,9 +12,9 @@ const EXAMPLES = [
 ];
 
 const POSTCARDS = [
-  { seed: 'kyoto-maple', place: 'Kyoto', line: 'Temples by morning, tofu by noon', tilt: '-rotate-3' },
-  { seed: 'Amalfi coast', place: 'Amalfi Coast', line: 'Three slow days above the sea', tilt: 'rotate-2 mt-8' },
-  { seed: 'marrakech-dunes', place: 'Marrakech', line: 'Souks, riads and a desert sunset', tilt: '-rotate-1 -mt-3' },
+  { scene: 2, place: 'Kyoto', line: 'Temples by morning, tofu by noon', tilt: '-rotate-2', left: 0, top: 0 },
+  { scene: 1, place: 'Amalfi Coast', line: 'Three slow days above the sea', tilt: 'rotate-2', left: 200, top: 118 },
+  { scene: 4, place: 'Marrakech', line: 'Souks, riads and a desert sunset', tilt: '-rotate-1', left: 24, top: 262 },
 ];
 
 export function LandingPage() {
@@ -98,8 +98,9 @@ export function LandingPage() {
 
           <div className="relative hidden h-[500px] lg:block" aria-hidden>
             {POSTCARDS.map((card, i) => (
-              <div key={card.place} className={`absolute w-[300px] rounded-2xl bg-surface p-2.5 pb-4 shadow-lift ${card.tilt}`} style={{ left: i === 1 ? 170 : i === 2 ? 10 : 40, top: i === 0 ? 0 : i === 1 ? 130 : 290, zIndex: i }}>
-                <SceneArt seed={card.seed} className="h-36 w-full rounded-xl" />
+              // Upper cards sit on top, so each overlap covers only artwork and never a caption.
+              <div key={card.place} className={`absolute w-[290px] rounded-2xl bg-surface p-2.5 pb-4 shadow-lift ${card.tilt}`} style={{ left: card.left, top: card.top, zIndex: POSTCARDS.length - i }}>
+                <SceneArt seed={card.place} scene={card.scene} className="h-36 w-full rounded-xl" />
                 <p className="mt-3 px-1.5 font-display text-lg font-semibold">{card.place}</p>
                 <p className="px-1.5 text-[13px] text-ink-soft">{card.line}</p>
               </div>

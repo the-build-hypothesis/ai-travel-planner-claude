@@ -60,6 +60,8 @@ async function guardAiSpend(c: Context<AppContext>, principal: Principal): Promi
       { scope: 'ai_min', id: `${principal.type}:${principal.id}`, max: 10, windowSeconds: 60 },
       { scope: 'ai_day', id: `${principal.type}:${principal.id}`, max: isGuest ? settings.guest_ai_requests_per_day : settings.user_ai_requests_per_day, windowSeconds: 86_400 },
       { scope: 'ai_ip_hour', id: clientIp(c), max: 120, windowSeconds: 3600 },
+      // Clearing cookies mints a new guest, so guests also share a limit per network address.
+      ...(isGuest ? [{ scope: 'ai_guest_ip_hour', id: clientIp(c), max: 30, windowSeconds: 3600 }] : []),
     ],
     message,
   );

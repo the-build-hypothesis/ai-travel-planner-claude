@@ -465,6 +465,20 @@ describe('cost abuse protection', () => {
     }
   });
 
+  it('cannot be escaped by clearing cookies, because guests share a limit per address', async () => {
+    mockExternal(() => turn({ reply: 'ok' }));
+    const ip = `198.51.100.${Math.floor(Math.random() * 250)}-shared`;
+    const statuses: number[] = [];
+    for (let i = 0; i < 31; i++) {
+      const fresh = new Client(); // A new cookie jar each time, as if the guest cookie was deleted.
+      fresh.ip = ip;
+      const trip = (await fresh.json('POST', '/api/trips', {})).data.trip;
+      statuses.push((await fresh.raw('POST', `/api/trips/${trip.id}/messages`, { content: 'hello' })).status);
+    }
+    expect(statuses.slice(0, 30).every((s) => s === 200)).toBe(true);
+    expect(statuses[30]).toBe(429);
+  });
+
   it('pauses AI requests when the daily cost cap is reached', async () => {
     await admin.json('PATCH', '/api/admin/settings', { daily_cost_cap_usd: 0 });
     try {
