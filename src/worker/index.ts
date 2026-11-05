@@ -20,12 +20,13 @@ const SECURITY_HEADERS: Record<string, string> = {
   'Cross-Origin-Opener-Policy': 'same-origin',
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self'",
+    // The zone injects Cloudflare Web Analytics into HTML. Its script and endpoint are the only outside ones allowed.
+    "script-src 'self' https://static.cloudflareinsights.com",
     // Leaflet positions its map panes with inline style attributes.
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https://tile.openstreetmap.org",
     "font-src 'self'",
-    "connect-src 'self'",
+    "connect-src 'self' https://cloudflareinsights.com",
     "frame-ancestors 'none'",
     "base-uri 'none'",
     "form-action 'self'",

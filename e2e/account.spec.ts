@@ -73,6 +73,8 @@ test('register, verify by email, migrate a guest trip, recover a password', asyn
   const recovery = await third.newPage();
   await recovery.goto('/login');
   await recovery.getByRole('link', { name: 'Forgot Password?' }).click();
+  // Wait for the new page, since the login page has an Email field of its own.
+  await expect(recovery.getByRole('heading', { name: 'Forgot your password?' })).toBeVisible();
   await recovery.getByLabel('Email').fill(inbox.address);
   await recovery.getByRole('button', { name: 'Send reset link' }).click();
   await expect(recovery.getByText(/If an account exists/)).toBeVisible();
