@@ -44,8 +44,9 @@ test('itinerary tools: add, drag, regenerate, research and details', async ({ pa
   await expect(stopsIn(dayOne).nth(1)).toContainText(firstTitle);
 
   // Reorder by drag and drop.
-  const dragged = await stopsIn(dayOne).last().locator('span.font-semibold').nth(1).innerText();
-  await stopsIn(dayOne).last().dragTo(stopsIn(dayOne).first(), { targetPosition: { x: 200, y: 10 } });
+  const dragged = await stopsIn(dayOne).nth(1).locator('span.font-semibold').nth(1).innerText();
+  await stopsIn(dayOne).nth(1).scrollIntoViewIfNeeded();
+  await stopsIn(dayOne).nth(1).dragTo(stopsIn(dayOne).first(), { targetPosition: { x: 200, y: 10 } });
   await expect(stopsIn(dayOne).first()).toContainText(dragged);
   // Times stay in order after a reorder.
   const times = await stopsIn(dayOne).locator('span.text-\\[13px\\].font-semibold').allInnerTexts();
@@ -65,7 +66,7 @@ test('itinerary tools: add, drag, regenerate, research and details', async ({ pa
   await page.getByRole('button', { name: 'Regenerate day 1' }).click();
   await page.getByLabel('What should change? (optional)').fill('Focus on gardens');
   await dialog.getByRole('button', { name: 'Regenerate' }).click();
-  await expect(page.getByText('Rewrote Day 1')).toBeVisible({ timeout: 90_000 });
+  await expect(page.getByText('Rewrote Day 1', { exact: true })).toBeVisible({ timeout: 90_000 });
   expect(await stopsIn(dayTwo).allInnerTexts()).toEqual(dayTwoBefore);
 
   // Research through chat produces verified cards that can be added to a day.

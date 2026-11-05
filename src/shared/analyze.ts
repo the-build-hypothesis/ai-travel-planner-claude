@@ -32,7 +32,8 @@ export function dayWarnings(day: Day, pace: string | null): string[] {
     }
     const a = prev.location;
     const b = cur.location;
-    if (a?.lat != null && a.lng != null && b?.lat != null && b.lng != null) {
+    // Only verified coordinates count here. AI estimates can be far enough off to raise false alarms.
+    if (a?.source === 'google_places' && b?.source === 'google_places' && a.lat != null && a.lng != null && b.lat != null && b.lng != null) {
       const km = haversineKm({ lat: a.lat, lng: a.lng }, { lat: b.lat, lng: b.lng });
       const gap = curStart - (prevStart + (prev.duration_minutes ?? 0));
       if (km > 30 && gap < 45) warnings.push(`Only ${Math.max(gap, 0)} minutes to cover about ${Math.round(km)} km before "${cur.title}".`);

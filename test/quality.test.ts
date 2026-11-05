@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dayWarnings, duplicateWarnings } from '../src/shared/analyze';
 import { cleanDayTitle, estimatedLocation, isPlaceholderStop, normalizeSchedule } from '../src/worker/itinerary/ops';
-import { wantsMap } from '../src/worker/trips/planner';
+import { applyPlace, wantsMap } from '../src/worker/trips/planner';
 import { Client, aiActivity, eventsOf, mockExternal, plannerLlm, testEnv, turn } from './helpers';
 
 const act = (id: string, start: string | null, duration: number | null, extra: object = {}): any => ({
@@ -60,6 +60,42 @@ describe('model output cleanup', () => {
     expect(day.title).toBe('Temples');
     expect(day.activities.map((a: any) => a.title)).toEqual(['Temple', 'Lunch']);
     expect(day.activities[1].start_time).toBe('10:10');
+  });
+});
+
+describe('accepting Places matches', () => {
+  const googlePlace = (lat: number, lng: number): any => ({ place_id: 'g1', name: 'Tenryu-ji', address: 'Kyoto', lat, lng, rating: 4.5, rating_count: 100, price_level: null, opening_hours: null, website: null, maps_url: null, type_label: null, photo_name: null, photo_attribution: null, business_status: 'OPERATIONAL' });
+  const KYOTO = { lat: 35.0116, lng: 135.7681 };
+
+  it('accepts a correct match when the model coordinates are badly off (seen in production)', () => {
+    // The model placed Tenryu-ji at latitude 35.63, about 67 km from its real location.
+    const activity = act('a', '09:00', 90, { location: estimatedLocation('Tenryu-ji Temple', 35.628674, 135.67035) });
+    expect(applyPlace(activity, googlePlace(35.0158379, 135.6737654), KYOTO)).toBe(true);
+    expect(activity.location.source).toBe('google_places');
+    expect(activity.location.lat).toBeCloseTo(35.0158, 3);
+  });
+
+  it('accepts a match near the estimate on a multi-city trip, far from the destination center', () => {
+    const activity = act('a', '09:00', 90, { location: estimatedLocation('Kiyomizu-dera', 35.0, 135.78) });
+    expect(applyPlace(activity, googlePlace(34.9949, 135.785), { lat: 35.6762, lng: 139.6503 })).toBe(true);
+  });
+
+  it('rejects a same-named place far from both', () => {
+    const activity = act('a', '09:00', 90, { location: estimatedLocation('Tenryu-ji Temple', 35.02, 135.67) });
+    expect(applyPlace(activity, googlePlace(40.0, -83.0), KYOTO)).toBe(false);
+    expect(activity.location.source).toBe('ai_estimate');
+  });
+
+  it('accepts a match when there is nothing to compare against', () => {
+    const activity = act('a', '09:00', 90, { location: estimatedLocation('Somewhere', null, null) });
+    expect(applyPlace(activity, googlePlace(10, 10), null)).toBe(true);
+  });
+
+  it('does not warn about travel time based on unverified estimates', () => {
+    const a = act('a', '09:00', 60, { location: estimatedLocation('Near', 35.0, 135.7) });
+    const b = act('b', '10:10', 60, { location: estimatedLocation('Wrong', 35.7, 135.7) });
+    const day: any = { id: 'd', day_number: 1, date: null, title: '', area: null, summary: null, transport_notes: null, activities: [a, b] };
+    expect(dayWarnings(day, 'balanced')).toEqual([]);
   });
 });
 

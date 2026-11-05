@@ -122,7 +122,11 @@ describe('itinerary generation', () => {
   it('rejects a Places match that is far from where the stop should be', async () => {
     const client = new Client();
     const created = await newTrip(client);
-    mockExternal(plannerLlm({ turn: GENERATE }), () => ({ places: [{ id: 'wrong', displayName: { text: 'Same Name in Ohio' }, location: { latitude: 40.0, longitude: -83.0 } }] }));
+    mockExternal(plannerLlm({ turn: GENERATE }), (body) =>
+      body.textQuery === 'Tokyo'
+        ? { places: [{ id: 'tokyo', displayName: { text: 'Tokyo' }, location: { latitude: 35.68, longitude: 139.76 } }] }
+        : { places: [{ id: 'wrong', displayName: { text: 'Same Name in Ohio' }, location: { latitude: 40.0, longitude: -83.0 } }] },
+    );
     const events = await client.sse(`/api/trips/${created.id}/messages`, { content: 'Plan it' });
     const activity = eventsOf(events, 'done')[0].trip.itinerary.days[0].activities[0];
     expect(activity.location.source).toBe('ai_estimate');

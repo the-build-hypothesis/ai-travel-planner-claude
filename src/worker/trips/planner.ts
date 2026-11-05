@@ -139,12 +139,15 @@ function attributionFor(ctx: TurnContext, trip: TripRow | TripDto): Attribution 
 /** Copies Google data onto an activity, but only if the match plausibly is the same place. */
 export function applyPlace(activity: Activity, place: PlaceResult, bias: { lat: number; lng: number } | null): boolean {
   if (place.lat == null || place.lng == null) return false;
+  // The search names the place and its city, so Google's match is usually right, and the model's
+  // coordinates can be tens of kilometers off. A match is rejected only if it is far from both the
+  // destination and the estimate, such as a place with the same name in another country.
+  const point = { lat: place.lat, lng: place.lng };
   const estimate = activity.location;
-  if (estimate?.lat != null && estimate.lng != null) {
-    if (haversineKm({ lat: estimate.lat, lng: estimate.lng }, { lat: place.lat, lng: place.lng }) > 60) return false;
-  } else if (bias && haversineKm(bias, { lat: place.lat, lng: place.lng }) > 200) {
-    return false;
-  }
+  const nearDestination = bias ? haversineKm(bias, point) <= 150 : false;
+  const nearEstimate = estimate?.lat != null && estimate.lng != null ? haversineKm({ lat: estimate.lat, lng: estimate.lng }, point) <= 60 : false;
+  const canCheck = Boolean(bias) || (estimate?.lat != null && estimate.lng != null);
+  if (canCheck && !nearDestination && !nearEstimate) return false;
   const closed = place.business_status === 'CLOSED_PERMANENTLY';
   activity.location = {
     permanently_closed: closed,
