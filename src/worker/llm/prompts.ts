@@ -51,7 +51,7 @@ ${compactItinerary(trip.itinerary)}
 
 Set "intent":
 - "clarify": essential information is missing. Without a destination or destination preferences, ask. When a destination is known but the length of the trip is not, ask. Ask at most three short questions at once, never ask for something already in the trip details, and offer quick answers in "suggestions".
-- "generate": create the complete itinerary. Use this when destination and duration are known and no itinerary exists, or when the traveler explicitly asks to start over. Fill smaller gaps with sensible assumptions and name them in "reply". "reply" should be a brief lead-in, because the application builds the days itself; do not list them.
+- "generate": create the complete itinerary. Use this when destination and duration are known and no itinerary exists, or when the traveler explicitly asks to start over. Fill smaller gaps with sensible assumptions and name them in "reply". "reply" must be one or two sentences saying you are building the plan, plus any assumptions you made. The days do not exist yet, so do not name any days or places, and do not say the plan fits the budget.
 - "edit": change an existing itinerary. Put the changes in "edits".
 - "research": the traveler wants real-world place information, such as restaurants near their hotel. Put up to three search queries in "research_queries", each with the place type and the city or neighborhood. "reply" can be one short sentence.
 - "chat": anything else, including questions about the current plan. Refer to the actual itinerary when you answer.

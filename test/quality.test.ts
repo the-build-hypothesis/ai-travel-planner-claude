@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dayWarnings, duplicateWarnings } from '../src/shared/analyze';
 import { cleanDayTitle, estimatedLocation, isPlaceholderStop, normalizeSchedule } from '../src/worker/itinerary/ops';
+import { wantsMap } from '../src/worker/trips/planner';
 import { Client, aiActivity, eventsOf, mockExternal, plannerLlm, testEnv, turn } from './helpers';
 
 const act = (id: string, start: string | null, duration: number | null, extra: object = {}): any => ({
@@ -59,6 +60,24 @@ describe('model output cleanup', () => {
     expect(day.title).toBe('Temples');
     expect(day.activities.map((a: any) => a.title)).toEqual(['Temple', 'Lunch']);
     expect(day.activities[1].start_time).toBe('10:10');
+  });
+});
+
+describe('map view requests', () => {
+  it('ignores show_map when the traveler did not ask about a map', async () => {
+    const client = new Client();
+    const trip = (await client.json('POST', '/api/trips', {})).data.trip;
+    mockExternal(() => turn({ show_map: true }));
+    const events = await client.sse(`/api/trips/${trip.id}/messages`, { content: 'What should we eat in Kyoto?' });
+    expect(eventsOf(events, 'show_map')).toEqual([]);
+  });
+
+  it.each([['Show me the itinerary on a map'], ['can you pin these'], ['MAP please']])('honors it for "%s"', (text) => {
+    expect(wantsMap(text)).toBe(true);
+  });
+
+  it('does not match words that merely contain "map"', () => {
+    expect(wantsMap('Visit the Mapungubwe museum')).toBe(false);
   });
 });
 

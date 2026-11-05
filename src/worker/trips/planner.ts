@@ -358,6 +358,10 @@ export function sanitizeTripUpdates(updates: TripUpdates): Record<string, unknow
   return out;
 }
 
+export function wantsMap(text: string): boolean {
+  return /\b(map|maps|pin|pins|plot)\b/i.test(text);
+}
+
 const JSON_COLUMNS = new Set(['children_ages', 'interests']);
 
 /** Applies a validated patch and keeps duration and dates consistent. The caller validates first. */
@@ -536,7 +540,8 @@ export async function runTurn(ctx: TurnContext, initial: TripRow, userText: stri
     }
 
     row = await reloadTrip(ctx.env.DB, row.id);
-    if (turn.show_map) ctx.emit({ type: 'show_map' });
+    // The model occasionally sets this unprompted, so it also has to match what the traveler asked.
+    if (turn.show_map && wantsMap(userText)) ctx.emit({ type: 'show_map' });
 
     const notes = [...failures];
     if (lengthNote) notes.push(lengthNote);
