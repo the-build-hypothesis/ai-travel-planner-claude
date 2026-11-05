@@ -1,0 +1,40 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "ai-travel-planner-claude",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // Administrator-managed plain-text runtime variables (LLM_PROVIDER, LLM_MODEL, EMAIL_FROM)
+  // are not declared here. keep_vars stops a deploy from removing them; secrets persist anyway.
+  "keep_vars": true,
+  "vars": {
+    "APP_PUBLIC_URL": "https://ai-travel-planner-v1-claude.thebuildhypothesis.com"
+  },
+  "build": {
+    "command": "npm run build"
+  },
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // Everything goes through the Worker so security headers and the HTTPS redirect apply uniformly.
+    "run_worker_first": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bh-travel-v1-claude-claude-db",
+      "database_id": "79aa89be-91d5-493f-b115-43bfce80c764",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "send_email": [{ "name": "EMAIL" }],
+  "routes": [
+    {
+      "pattern": "ai-travel-planner-v1-claude.thebuildhypothesis.com",
+      "custom_domain": true
+    }
+  ],
+  "triggers": { "crons": ["17 3 * * *"] },
+  "observability": { "enabled": true }
+}

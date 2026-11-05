@@ -1,0 +1,156 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-paper: #faf6ef;
+  --color-surface: #ffffff;
+  --color-sand: #f1e9dc;
+  --color-sand-deep: #e4d9c6;
+  --color-line: #e6dccb;
+  --color-ink: #17323a;
+  --color-ink-soft: #4a5f65;
+  --color-muted: #66767a;
+  --color-accent: #c8502c;
+  --color-accent-deep: #a63f20;
+  --color-accent-soft: #fbe9e1;
+  --color-teal: #0f4c5c;
+  --color-teal-soft: #e0eef0;
+  --color-verified: #17694a;
+  --color-verified-soft: #e2f3ea;
+  --color-estimate: #8a5a00;
+  --color-estimate-soft: #fbf1da;
+  --color-danger: #b3261e;
+  --color-danger-soft: #fce9e7;
+  --font-display: 'Fraunces Variable', Georgia, serif;
+  --font-sans: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --shadow-card: 0 1px 2px rgb(23 50 58 / 0.05), 0 8px 24px -12px rgb(23 50 58 / 0.14);
+  --shadow-lift: 0 2px 4px rgb(23 50 58 / 0.06), 0 18px 40px -16px rgb(23 50 58 / 0.28);
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv11', 'ss01';
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+  font-optical-sizing: auto;
+}
+
+:focus-visible {
+  outline: 2.5px solid var(--color-teal);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+dialog::backdrop {
+  background: rgb(23 50 58 / 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.leaflet-container {
+  font-family: var(--font-sans);
+  background: var(--color-sand);
+}
+
+/* Softens the map's colors so they sit comfortably with the warm page. */
+.leaflet-tile-pane {
+  filter: saturate(0.72) contrast(0.96) brightness(1.02);
+}
+
+.map-pin {
+  width: 30px;
+  height: 30px;
+  border-radius: 50% 50% 50% 4px;
+  transform: rotate(-45deg);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
+  transition: transform 0.15s;
+}
+.map-pin > span {
+  transform: rotate(45deg);
+}
+.map-pin.approx {
+  border-style: dashed;
+  opacity: 0.88;
+}
+.map-pin.active {
+  transform: rotate(-45deg) scale(1.3);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.32s ease-out both;
+}
+
+@keyframes pulse-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.dot {
+  animation: pulse-dot 1.2s infinite ease-in-out;
+}
+.dot:nth-child(2) {
+  animation-delay: 0.16s;
+}
+.dot:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--color-sand) 25%, #f8f2e8 50%, var(--color-sand) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .dot,
+  .skeleton {
+    animation: none;
+  }
+}
